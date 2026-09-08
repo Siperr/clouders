@@ -7,60 +7,69 @@
     <link rel="stylesheet" href="/styles/folder.css">
     <script defer>
         function addFile() {
-        const currFolder = window.location.pathname.split("/")[2] || "";
-        window.location.href = `/folder/${currFolder}/upload`;
+            const currFolder = window.location.pathname.split("/")[2] || "";
+            window.location.href = `/folder/${currFolder}/upload`;
         }
 
         function addFolder() {
-        const currFolder = window.location.pathname.split("/")[2] || "";
-        window.location.href = `/folder/${currFolder}/new-folder`;
+            const currFolder = window.location.pathname.split("/")[2] || "";
+            window.location.href = `/folder/${currFolder}/new-folder`;
         }
 
-        function showFolderMenu(idString) {
-        const id = Number(idString);
-        const folderMenu = document.querySelector(
-            `.folder#folder-${id} .folder-menu`,
-        );
-        const folderMenuBtn = document.querySelector(
-            `.folder#folder-${id} .folder-menu-btn`,
-        );
+        async function deleteFolder(folderId) {
+            if (!confirm("Are you sure to delete this folder and all its contents?")) return;
 
-        folderMenu.hidden = !folderMenu.hidden;
+            const url = `/folder/${Number(folderId)}/delete`;
 
-        if (folderMenu.hidden) return;
+            console.log("delete folder url: ", url);
 
-        const rect = folderMenuBtn.getBoundingClientRect();
-        folderMenu.style.position = "fixed";
-        folderMenu.style.left = `${rect.left - folderMenu.offsetWidth + 180}px`;
-        folderMenu.style.top = `${rect.bottom - 50}px`;
-        }
+            const response = await fetch(url, {
+                method: "DELETE",
+            });
 
-        function closeFolderMenu(idString) {
-        const id = Number(idString);
-        const folderMenu = document.querySelector(
-            `.folder#folder-${id} .folder-menu`,
-        );
-        folderMenu.hidden = true;
-        }
+            console.log("delete folder response: ", response);
 
-        async function deleteFolder(user, folderId) {
-           const response = await fetch(`/folder/${Number(folderId)}/delete`);
-           
-           if (response > 200) {
-                return;
-           }
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Errore durante la cancellazione");
+            }
         }
 
         async function openFolder(folderId){
-        //     const response = await fetch(`/folder/${Number(folderId)}`);
-
-        //     console.log('open folder response: ', response.status);
-
-        //     if (response.status === 200) {
-        //    }
-
             window.location.href = `/folder/${Number(folderId)}/`;
+        }
 
+        async function openFile(fileId){
+            window.location.href = `/file/${Number(fileId)}/`;
+        }
+
+        function showMenu(type, idString) {
+            const id = Number(idString);
+            const menu = document.querySelector(
+                `#${type}-${id} .menu`,
+            );
+            const menuBtn = document.querySelector(
+                `#${type}-${id} .menu-btn`,
+            );
+
+            menu.hidden = !menu.hidden;
+
+            if (menu.hidden) return;
+
+            const rect = menuBtn.getBoundingClientRect();
+            menu.style.position = "fixed";
+            menu.style.left = `${rect.left - menu.offsetWidth + 230}px`;
+            menu.style.top = `${rect.bottom - 50}px`;
+        }
+
+        function closeMenu(type, idString) {
+            const id = Number(idString);
+            const menu = document.querySelector(
+                `#${type}-${id} .menu`,
+            );
+
+            menu.hidden = true;
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -97,19 +106,19 @@
     <main>
         <div id="folder-contents">
             <% if (!folder.other_folders?.length && !folder.files?.length) { %>
-                <p>This folder is empty.</p>
+                <p id="empty-message">This folder is empty.</p>
             <% } else { %>
 
                 <% folder.other_folders?.forEach(subfolder => { %>
                     <div class="folder" id="folder-<%= subfolder.id %>">
                         <div class="icon-menu">
                             <img class="folder-icon" src="/assets/images/folder-icon.svg" onclick="openFolder('<%= subfolder.id %>')">
-                            <svg onclick="showFolderMenu('<%= subfolder.id %>')" class='folder-menu-btn' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z" /></svg>
+                            <svg onclick="showMenu('folder', '<%= subfolder.id %>')" class='menu-btn' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z" /></svg>
                         </div>
-                        <div class="folder-menu" hidden>
-                            <svg class='close-btn' onclick="closeFolderMenu('<%= subfolder.id %>')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+                        <div class="menu" hidden>
+                            <svg class='close-btn' onclick="closeMenu('folder', '<%= subfolder.id %>')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
                             <ul>
-                                <li onClick="">Delete</li>
+                                <li onClick="deleteFolder('<%= subfolder.id %>')">Delete</li>
                                 <li>Rename</li>
                                 <li>Move (to do)</li>
                             </ul>
@@ -119,8 +128,17 @@
                 <% }) %>
 
                 <% folder.files?.forEach(file => { %>
-                    <div class="file">
-                        <img id="file-icon" src="/assets/images/file-icon.svg">
+                    <div class="file" id="file-<%= file.id %>">
+                        <div class="icon-menu">
+                            <img class="file-icon" src="/assets/images/file-icon.svg" onclick="openFile('<%= file.id %>')">
+                            <svg onclick="showMenu('file', '<%= file.id %>')" class='menu-btn' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z" /></svg>
+                        </div>
+                        <div class="menu" hidden>
+                            <svg class='close-btn' onclick="closeMenu('file', '<%= file.id %>')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+                            <ul>
+                                <li onClick="">Delete</li>
+                            </ul>
+                        </div>
                         <p class="file-name"><%= file.name %></p>
                     </div>
                 <% }) %>
@@ -128,7 +146,7 @@
             <% } %>
             <button id="add-btn"><img src="/assets/images/add.svg"></button>
             <div id="add-menu" hidden>
-                <h3>Choose what to add</h3>
+                <h3>New</h3>
                 <hr>
                 <ul>
                     <li id='add-file' onClick="addFile()">File</li>

@@ -1,3 +1,9 @@
+main {
+    --block-dimension: 150px;
+    --block-padding: 15px;
+    --block-gap: 20px;
+}
+
 #add-btn {
     background-color: transparent;
     width: 80px;
@@ -41,7 +47,7 @@
     padding: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: var(--block-gap);
     width: 100%;
 }
 
@@ -53,6 +59,7 @@
     padding: 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,.2);
     z-index: 9999;
+    width: 200px;
 }
 
 #add-menu h3 {
@@ -83,6 +90,16 @@ hr {
     margin-right: auto;
     margin-top: 5px;
     margin-bottom: 10px;
+}
+
+p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: var(--block-dimension);
+  font-weight: 400;
+  color: var(--color-text);
+  padding: 0 var(--block-padding);
 }
 
 .icon-menu {
@@ -121,7 +138,7 @@ hr {
     margin-left: 20px;
 }
 
-.folder-menu-btn {
+.menu-btn {
     width: 30px;
     height: 30px;
     position: relative;
@@ -130,12 +147,12 @@ hr {
     fill: var(--color-text);
 }
 
-.folder-menu-btn:hover {
+.menu-btn:hover {
     /* background-color: var(--hover); */
     cursor: pointer;
 }
 
-.folder-menu {
+.menu {
     position: fixed;
     background: white;
     border: 1px solid #ccc;
@@ -143,21 +160,23 @@ hr {
     padding: 20px 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,.2);
     z-index: 9999;
+    width: 200px;
 }
 
-.folder-menu ul{
+.menu ul{
     list-style: none;
     padding: 0;
     margin: 0;
     margin-top: 20px;
+    width: 85%;
 }
 
-.folder-menu li {
+.menu li {
     padding: 8px 12px;
     cursor: pointer;
 }
 
-.folder-menu li:hover {
+.menu li:hover {
     background-color: var(--hover);
     /* color: white; */
 }
@@ -172,4 +191,27 @@ hr {
 
 .close-btn:hover {
     cursor: pointer;
+}
+
+.file-icon {
+    width: 80px;
+    height: auto;
+}
+
+.file {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: var(--block-dimension);
+    height: var(--block-dimension);
+    padding: var(--block-padding);
+}
+
+.file:hover {
+    background-color: var(--hover);
+}
+
+#empty-message {
+    width: 300px;
 }
