@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/signup.css">
+    <link rel="stylesheet" href="/styles/global.css">
+    <title>Clouders - Signup</title>
+</head>
+<body>
+    <main>
+        <img id="hero" src="/assets/images/clouders-logo-dark.svg" href="/">
+        <h2>Sign up to upload your files!</h2>
+        <form action="/signup" method="POST">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username">
+            <label>Password</label>
+            <input type="password" id="password" name="password">
+            <button type="submit">Submit</button>
+        </form>
+        <% if(locals.error) { %>
+            <p id="error"><%= error %></p>
+        <% } %>
+    </main>
+</body>
+</html>

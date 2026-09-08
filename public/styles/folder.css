@@ -1,0 +1,175 @@
+#add-btn {
+    background-color: transparent;
+    width: 80px;
+    height: 80px;
+    height: auto;
+    border: none;
+    border-radius: 50%;
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+    box-shadow: 4px 4px 5px rgba(0,0,0,0.1), 0px -1px 2px rgba(0,0,0,0.1);
+    font-size: 1.5rem;
+    margin-top: 0;
+    /* padding: 5px; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#add-btn:hover {
+    background-color: var(--hover);
+}
+
+#add-btn img {
+    width: 80px;
+    height: 80px;
+}
+
+#path {
+    background-color: var(--primary);
+    height: 40px;
+    padding: 10px;
+    width: 100%;
+    font-family: monospace;
+    color: white;
+    margin-bottom: 20px;
+    border-radius: 15px;
+}
+
+#folder-contents {
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+}
+
+#add-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,.2);
+    z-index: 9999;
+}
+
+#add-menu h3 {
+    color: var(--accent);
+}
+
+#add-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#add-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+#add-menu li:hover {
+    background-color: var(--hover);
+    /* color: white; */
+}
+
+hr {
+    color: var(--color-text);
+    width: 25%; 
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.icon-menu {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
+}
+
+.folder-icon {
+    width: 80px;
+    height: auto;
+}
+
+.folder {
+    width: 150px;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+}
+
+.folder:hover {
+    background-color: var(--hover);
+}
+
+.folder h3 {
+    font-weight: 600;
+}
+
+.folder-name {
+    width: 100%;
+    text-align: start;
+    margin-left: 20px;
+}
+
+.folder-menu-btn {
+    width: 30px;
+    height: 30px;
+    position: relative;
+    top: -30px;
+    right: 0px;
+    fill: var(--color-text);
+}
+
+.folder-menu-btn:hover {
+    /* background-color: var(--hover); */
+    cursor: pointer;
+}
+
+.folder-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 20px 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,.2);
+    z-index: 9999;
+}
+
+.folder-menu ul{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    margin-top: 20px;
+}
+
+.folder-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.folder-menu li:hover {
+    background-color: var(--hover);
+    /* color: white; */
+}
+
+.close-btn {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 10px;
+    right: 10px;
+}
+
+.close-btn:hover {
+    cursor: pointer;
+}

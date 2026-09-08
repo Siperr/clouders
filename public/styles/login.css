@@ -1,0 +1,23 @@
+#hero {
+    width: 25%;
+}
+
+main {
+    width: 100%;
+    min-height: 80svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+#sign-up {
+    color: var(--secondary);
+    font-weight: bold;
+}
+
+#error {
+    margin-top: 20px;
+    color: rgb(252, 27, 27);
+}
