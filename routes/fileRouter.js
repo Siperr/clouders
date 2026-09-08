@@ -1,92 +1,106 @@
-const fileRouter = require('express').Router();
-const prisma = require('../config/prisma');
-const verifyAuth = require('../middlewares/auth');
-
+const fileRouter = require("express").Router();
+const prisma = require("../config/prisma");
+const verifyAuth = require("../middlewares/auth");
 
 // TODO: CRUD file e download
-fileRouter.get('/:id', verifyAuth, async (req, res) => {
-    try{ 
-        const file = await prisma.files.findUnique({
-            where: {
-                id: req.params.id,
-                owner_id: req.user.id
-            }
-        });
+fileRouter.get("/:id", verifyAuth, async (req, res) => {
+  try {
+    const file = await prisma.files.findUnique({
+      where: {
+        id: Number(req.params.id),
+        owner_id: req.user.id,
+      },
+    });
 
-        console.log(`${req.user.username} requested file: ${file.name}`);
+    console.log(`${req.user.username} requested file: ${file.name}`);
+    console.log("file path: ", file.path);
+    console.log("file mime_type: ", file.mime_type);
 
-        res.sendFile(file.path);
-    } catch(err) {
-        console.log('error viewing file ', err);
-        res.status(500).render('error', {message: 'could not view file'});
-    }
+    res.sendFile(
+      file.path,
+      {
+        headers: {
+          "Content-Disposition": "inline",
+          "Content-Type": file.mime_type,
+        },
+      },
+      (err) => {
+        if (err) {
+          console.error("Error sending file:", err);
+        } else {
+          console.log("Sent:", file.name);
+        }
+      },
+    );
+  } catch (err) {
+    console.log("error viewing file ", err);
+    res.status(500).render("error", { message: "could not view file", back: `/folder/${file.folder_id}` });
+  }
 });
 
 fileRouter.delete("/", verifyAuth, async (req, res) => {
-    try {
-        const fileId = Number(req.body.file_id);
+  try {
+    const fileId = Number(req.body.file_id);
 
-        // controllo che il file esista e appartenga all'utente
-        const file = await prisma.files.findFirst({
-            where: {
-                id: fileId,
-                owner_id: req.user.id,
-            },
-        });
+    // controllo che il file esista e appartenga all'utente
+    const file = await prisma.files.findFirst({
+      where: {
+        id: fileId,
+        owner_id: req.user.id,
+      },
+    });
 
-        if (!file) {
-            return res.status(404).json({
-                message: "File not found",
-            });
-        }
-
-        // elimina il record dal database
-        await prisma.files.delete({
-            where: {
-                id: file.id,
-            },
-        });
-
-        // opzionale: eliminare anche il file fisico
-        // fs.unlink(file.path, ...)
-
-        res.status(200).json({
-            message: "File deleted",
-        });
-
-    } catch (err) {
-        console.log("delete file error:", err);
-
-        res.status(500).json({
-            message: "Could not delete file",
-        });
+    if (!file) {
+      return res.status(404).json({
+        message: "File not found",
+      });
     }
+
+    // elimina il record dal database
+    await prisma.files.delete({
+      where: {
+        id: file.id,
+      },
+    });
+
+    // opzionale: eliminare anche il file fisico
+    // fs.unlink(file.path, ...)
+
+    res.status(200).json({
+      message: "File deleted",
+    });
+  } catch (err) {
+    console.log("delete file error:", err);
+
+    res.status(500).json({
+      message: "Could not delete file",
+    });
+  }
 });
 
-fileRouter.get("/download/:id", verifyAuth, async (req, res) => {
-    try {
-        const fileId = Number(req.params.id);
+fileRouter.get("/:id/download/", verifyAuth, async (req, res) => {
+  try {
+    const fileId = Number(req.params.id);
 
-        const file = await prisma.files.findFirst({
-            where: {
-                id: fileId,
-                owner_id: req.user.id,
-            },
-        });
+    const file = await prisma.files.findFirst({
+      where: {
+        id: fileId,
+        owner_id: req.user.id,
+      },
+    });
 
-        if (!file) {
-            return res.status(404).send("File not found");
-        }
-
-        res.download(file.path, file.name);
-
-    } catch (err) {
-        console.log("download file error:", err);
-
-        res.status(500).render("error", {
-            message: "Could not download file",
-        });
+    if (!file) {
+      return res.status(404).send("File not found");
     }
+
+    res.download(file.path, file.name);
+  } catch (err) {
+    console.log("download file error:", err);
+
+    res.status(500).render("error", {
+      message: "Could not download file",
+    });
+  }
 });
 
 module.exports = fileRouter;
