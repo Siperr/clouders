@@ -205,13 +205,21 @@ folderRouter.post("/:id/new-folder", verifyAuth, async (req, res) => {
 
 folderRouter.get("/:id/upload", verifyAuth, async (req, res) => {
   try {
-    const id = req.params.id;
-    const path = await getPath(id);
-    const actionString = `/folder/${id}/upload`;
-    res.render("upload", { path: path, actionString: actionString});
+    const folderId = Number(req.params.id);
+    const folder = await getFolder(req.user.id, folderId);
+
+    if (!folder) {
+      return res.status(404).render("error", {
+        message: "folder not found",
+        back: `/folder/`,
+      });
+    }
+    const path = await getPath(folder);
+    const actionString = `/folder/${folderId}/upload`;
+    res.render("upload", { path, actionString});
   } catch(err) {
     console.log('upload page error: ', err);
-    res.status(500).render("error", { message: err, back: `/folder/${id}`});
+    res.status(500).render("error", { message: err, back: `/folder/${folderId}`});
   }
 });
 
