@@ -92,6 +92,12 @@
             menu.hidden = true;
         }
 
+        function goBack(folderId) {
+            console.log("goBack, folderId: ", folderId);
+            const newPath = `/folder/${folderId}`;
+            window.location.href = newPath;
+        }
+        
         document.addEventListener("DOMContentLoaded", () => {
         const addBtn = document.getElementById("add-btn");
         const menu = document.getElementById("add-menu");
@@ -122,7 +128,17 @@
 </head>
 <body>
     <%- include('partials/header', {user}) %>
-    <p id="path"><%= path %></p>
+    <div id="path-nav">
+        <svg id='back' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onclick="goBack('<%= pathParts.length <= 2 ? pathParts[0].id : pathParts[1].id %>')"><title>Back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+        <div id="path">
+            <% pathParts.forEach((element, index) => { %>
+                <p><a href="/folder/<%= element.id %>">
+                    <%= element.name %>
+                </a></p>
+                <p>></p>
+            <% }); %>
+        </div>
+    </div>
     <main>
         <div id="folder-contents">
             <% if (!folder.other_folders?.length && !folder.files?.length) { %>

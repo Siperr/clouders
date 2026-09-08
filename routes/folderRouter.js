@@ -51,6 +51,29 @@ async function getPath(folder) {
   return reversePath;
 }
 
+async function getPathParts(folder) {
+  let pathParts = [];
+
+  pathParts.push({ id: folder.id, name: folder.name });
+
+  try {
+    while (
+      folder.parent_folder_id !== null &&
+      (folder = await prisma.folders.findFirst({
+        where: {
+          id: folder.parent_folder_id,
+        },
+      }))
+    ) {
+      pathParts.push({ id: folder.id, name: folder.name });
+    }
+  } catch (err) {
+    console.log("getPathParts error: ", err);
+  }
+
+  return pathParts.reverse();
+}
+
 async function getFolder(owner_id, folder_id = null) {
   const where = {
     owner_id: Number(owner_id),
@@ -77,15 +100,15 @@ async function showFolder(req, res) {
       Number(req.user.id),
       req.params.id ? Number(req.params.id) : null,
     );
-    const path = await getPath(folder);
-    console.log("showFolder, path: ", path);
+    const pathParts = await getPathParts(folder);
+    // console.log("showFolder, path: ", path);
 
     console.log(`got folder ${folder.name}: `, folder);
     res.render("folder", {
       folder: folder,
       title: folder.name,
       user: req.user,
-      path: path,
+      pathParts: pathParts,
     });
   } catch (err) {
     console.log("get folder error ", err);
@@ -277,6 +300,7 @@ folderRouter.delete("/:id/delete", verifyAuth, async (req, res) => {
     if (!folder) {
       return res.status(404).render("error", {
         message: "folder not found",
+        back: `/folder`,
       });
     }
 
