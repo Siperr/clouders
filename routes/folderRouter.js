@@ -5,9 +5,11 @@ const folderRouter = require("express").Router();
 const crypto = require("crypto");
 const multer = require("multer");
 
+const uploadDir = require("path").join(__dirname, "../tmp/uploads");
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "/tmp/uploads");
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     crypto.randomBytes(16, function (err, raw) {
@@ -261,9 +263,9 @@ folderRouter.post(
   },
 );
 
-folderRouter.delete("/", verifyAuth, async (req, res) => {
+folderRouter.delete("/:id/delete", verifyAuth, async (req, res) => {
   try {
-    const folderId = Number(req.body.id);
+    const folderId = Number(req.params.id);
 
     const folder = await prisma.folders.findFirst({
       where: {
@@ -290,8 +292,8 @@ folderRouter.delete("/", verifyAuth, async (req, res) => {
       },
     });
 
-    console.log(`${req.user.username} delete the ${folder.name} folder`);
-    res.redirect(`/folder/${folder.parent_folder_id}`);
+    console.log(`${req.user.username} deleted the '${folder.name}' folder`);
+    res.redirect(200, `/folder/${folder.parent_folder_id}`);
   } catch (err) {
     console.log("delete folder error ", err);
     res.status(500).render("error", { message: "could not delete folder" });
