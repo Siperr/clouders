@@ -1,6 +1,7 @@
 const fileRouter = require("express").Router();
 const prisma = require("../config/prisma");
 const verifyAuth = require("../middlewares/auth");
+const fs = require("fs");
 
 // TODO: CRUD file e download
 fileRouter.get("/:id", verifyAuth, async (req, res) => {
@@ -38,9 +39,9 @@ fileRouter.get("/:id", verifyAuth, async (req, res) => {
   }
 });
 
-fileRouter.delete("/", verifyAuth, async (req, res) => {
+fileRouter.delete("/:id/delete", verifyAuth, async (req, res) => {
   try {
-    const fileId = Number(req.body.file_id);
+    const fileId = Number(req.params.id);
 
     // controllo che il file esista e appartenga all'utente
     const file = await prisma.files.findFirst({
@@ -51,8 +52,9 @@ fileRouter.delete("/", verifyAuth, async (req, res) => {
     });
 
     if (!file) {
-      return res.status(404).json({
-        message: "File not found",
+      return res.status(404).render("error", {
+        message: "file not found",
+        back: `/folder`,
       });
     }
 
@@ -63,12 +65,14 @@ fileRouter.delete("/", verifyAuth, async (req, res) => {
       },
     });
 
-    // opzionale: eliminare anche il file fisico
-    // fs.unlink(file.path, ...)
-
-    res.status(200).json({
-      message: "File deleted",
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        console.error("Error deleting file from filesystem:", err);
+      }
     });
+
+    console.log(`${req.user.username} deleted the '${file.name}' file`);
+    res.redirect(200, `/folder/${file.folder_id}`); 
   } catch (err) {
     console.log("delete file error:", err);
 

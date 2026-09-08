@@ -36,6 +36,26 @@
             }
         }
 
+        async function deleteFile(fileId) {
+            if (!confirm("Are you sure to delete this file?")) return;
+
+            const url = `/file/${Number(fileId)}/delete`;
+
+            console.log("delete file url: ", url);
+
+            const response = await fetch(url, {
+                method: "DELETE",
+            });
+
+            console.log("delete file response: ", response);
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Errore durante la cancellazione");
+            }
+        }
+
         async function openFolder(folderId){
             window.location.href = `/folder/${Number(folderId)}/`;
         }
@@ -136,7 +156,7 @@
                         <div class="menu" hidden>
                             <svg class='close-btn' onclick="closeMenu('file', '<%= file.id %>')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
                             <ul>
-                                <li onClick="">Delete</li>
+                                <li onClick="deleteFile('<%= file.id %>')">Delete</li>
                             </ul>
                         </div>
                         <p class="file-name"><%= file.name %></p>
