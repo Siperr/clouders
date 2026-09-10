@@ -1,6 +1,8 @@
 const prisma = require("../config/prisma");
 const verifyAuth = require("../middlewares/auth");
 const folderRouter = require("express").Router();
+const { validateRenameFolder } = require("../middlewares/formValidation");
+const { validationResult } = require("express-validator");
 
 const crypto = require("crypto");
 const multer = require("multer");
@@ -285,6 +287,39 @@ folderRouter.post(
     }
   },
 );
+
+folderRouter.post("/:id/rename", verifyAuth, validateRenameFolder, async (req, res) => {
+  try {
+    const folderId = Number(req.params.id);
+    const parentId = Number(req.query.parent_id) || null;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).render("error", { message: "Invalid input", back: `/folder/${folderId}/` });
+    }
+    const newName = req.body["new-name"];
+    const folder = await prisma.folders.update({
+      where: {
+        id: folderId,
+        owner_id: req.user.id,
+      },
+      data: {
+        name: newName,
+      }
+    });
+
+    if (!folder) {
+      return res.status(404).render("error", {
+        message: "folder not found",
+        back: `/folder`,
+      });
+    }
+
+    console.log(`${req.user.username} renamed the folder to '${folder.name}'`);
+    res.redirect(`/folder/${parentId}`);
+  } catch (err) {
+    console.log("rename folder error ", err);
+    res.status(500).render("error", { message: "could not rename folder" });
+  }});
 
 folderRouter.delete("/:id/delete", verifyAuth, async (req, res) => {
   try {
