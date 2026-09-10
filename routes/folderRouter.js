@@ -3,6 +3,13 @@ const verifyAuth = require("../middlewares/auth");
 const folderRouter = require("express").Router();
 const { validateRenameFolder } = require("../middlewares/formValidation");
 const { validationResult } = require("express-validator");
+const {
+  getPath,
+  getPathParts,
+  getFolder,
+  showFolder,
+  createFolderTree,
+} = require("../lib/folderUtils");
 
 const crypto = require("crypto");
 const multer = require("multer");
@@ -23,102 +30,36 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-async function getPath(folder) {
-  let path = "/";
-
-  path = path + folder.name + "/";
-  let fld = folder;
-
-  console.log("getPath, path: ", path);
-
+folderRouter.get("/all", verifyAuth, async (req, res) => {
+  console.log("get all");
+  const exclude = req.query.exclude
+    ? req.query.exclude.split(",").map(Number)
+    : [];
   try {
-    while (
-      fld.parent_folder_id !== null &&
-      (fld = await prisma.folders.findFirst({
-        where: {
-          id: fld.parent_folder_id,
+    const folders = await prisma.folders.findMany({
+      where: {
+        owner_id: Number(req.user.id),
+        id: {
+          notIn: exclude,
         },
-      }))
-    ) {
-      path = path + fld.name + "/";
-      console.log("getPath, path: ", path);
-    }
-  } catch (err) {
-    console.log("buildPath error: ", err);
-  }
-
-  const reversePath = path.split("/").reverse().join(">").slice(1);
-  console.log("getPath, final path: ", reversePath);
-
-  return reversePath;
-}
-
-async function getPathParts(folder) {
-  let pathParts = [];
-
-  pathParts.push({ id: folder.id, name: folder.name });
-
-  try {
-    while (
-      folder.parent_folder_id !== null &&
-      (folder = await prisma.folders.findFirst({
-        where: {
-          id: folder.parent_folder_id,
-        },
-      }))
-    ) {
-      pathParts.push({ id: folder.id, name: folder.name });
-    }
-  } catch (err) {
-    console.log("getPathParts error: ", err);
-  }
-
-  return pathParts.reverse();
-}
-
-async function getFolder(owner_id, folder_id = null) {
-  const where = {
-    owner_id: Number(owner_id),
-  };
-
-  if (folder_id) {
-    where.id = Number(folder_id);
-  } else {
-    where.parent_folder_id = null;
-  }
-
-  return await prisma.folders.findFirst({
-    where,
-    include: {
-      files: true,
-      other_folders: true,
-    },
-  });
-}
-
-async function showFolder(req, res) {
-  try {
-    const folder = await getFolder(
-      Number(req.user.id),
-      req.params.id ? Number(req.params.id) : null,
-    );
-    const pathParts = await getPathParts(folder);
-    // console.log("showFolder, path: ", path);
-
-    console.log(`got folder ${folder.name}: `, folder);
-    res.render("folder", {
-      folder: folder,
-      title: folder.name,
-      user: req.user,
-      pathParts: pathParts,
+      },
+      select: {
+        id: true,
+        name: true,
+        parent_folder_id: true,
+      },
     });
+
+    const tree = createFolderTree(folders);
+    console.log(tree);
+    res.json(tree);
   } catch (err) {
-    console.log("get folder error ", err);
+    console.log("get all folders error ", err);
     res
       .status(400)
-      .render("error", { message: "could not open folder", back: "/folder" });
+      .render("error", { message: "could not fetch folders", back: "/folder" });
   }
-}
+});
 
 folderRouter.get("/", verifyAuth, async (req, res) => {
   const folder = await getFolder(req.user.id);
@@ -178,18 +119,19 @@ folderRouter.post("/:id/new-folder", verifyAuth, async (req, res) => {
       },
     });
 
-    console.log('new folder, default folders: ', defaultNamedFolders);
+    console.log("new folder, default folders: ", defaultNamedFolders);
 
     let newNumber = -1;
 
     if (defaultNamedFolders.length > 0) {
       const lastDefault = defaultNamedFolders[0].name;
-      console.log('lastDefault: ', lastDefault);
-      console.log('lastDefault split: ', lastDefault.split(' '));
-      newNumber = lastDefault.split(" ").length > 2 ? lastDefault.split(' ')[2] : 0;
+      console.log("lastDefault: ", lastDefault);
+      console.log("lastDefault split: ", lastDefault.split(" "));
+      newNumber =
+        lastDefault.split(" ").length > 2 ? lastDefault.split(" ")[2] : 0;
     }
 
-    console.log('new number: ', newNumber);
+    console.log("new number: ", newNumber);
 
     // console.log("new-folder sortedNumbers: ", sortedNumbers);
 
@@ -243,10 +185,12 @@ folderRouter.get("/:id/upload", verifyAuth, async (req, res) => {
     }
     const path = await getPath(folder);
     const actionString = `/folder/${folderId}/upload`;
-    res.render("upload", { path, actionString});
-  } catch(err) {
-    console.log('upload page error: ', err);
-    res.status(500).render("error", { message: err, back: `/folder/${folderId}`});
+    res.render("upload", { path, actionString });
+  } catch (err) {
+    console.log("upload page error: ", err);
+    res
+      .status(500)
+      .render("error", { message: err, back: `/folder/${folderId}` });
   }
 });
 
@@ -288,38 +232,84 @@ folderRouter.post(
   },
 );
 
-folderRouter.post("/:id/rename", verifyAuth, validateRenameFolder, async (req, res) => {
+folderRouter.post(
+  "/:id/rename",
+  verifyAuth,
+  validateRenameFolder,
+  async (req, res) => {
+    try {
+      const folderId = Number(req.params.id);
+      const parentId = Number(req.query.parent_id) || null;
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).render("error", {
+          message: errors.array()[0].msg,
+          back: `/folder/${folderId}/`,
+        });
+      }
+      const newName = req.body["new-name"];
+      const folder = await prisma.folders.update({
+        where: {
+          id: folderId,
+          owner_id: req.user.id,
+        },
+        data: {
+          name: newName,
+        },
+      });
+
+      if (!folder) {
+        return res.status(404).render("error", {
+          message: "folder not found",
+          back: `/folder`,
+        });
+      }
+
+      console.log(
+        `${req.user.username} renamed the folder to '${folder.name}'`,
+      );
+      res.redirect(`/folder/${parentId}`);
+    } catch (err) {
+      console.log("rename folder error ", err);
+      res.status(500).render("error", { message: "could not rename folder" });
+    }
+  },
+);
+
+folderRouter.post("/:id/move", verifyAuth, async (req, res) => {
   try {
     const folderId = Number(req.params.id);
-    const parentId = Number(req.query.parent_id) || null;
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).render("error", { message: "Invalid input", back: `/folder/${folderId}/` });
-    }
-    const newName = req.body["new-name"];
-    const folder = await prisma.folders.update({
+    const newParentId = Number(req.body["new-parent-folder"]);
+
+    const parentId = await prisma.folders.findUnique({
       where: {
-        id: folderId,
         owner_id: req.user.id,
+        id: newParentId,
       },
-      data: {
-        name: newName,
-      }
     });
 
-    if (!folder) {
-      return res.status(404).render("error", {
-        message: "folder not found",
-        back: `/folder`,
-      });
+    if (!parentId) {
+      throw new Error("Folder not found or authorized.");
     }
 
-    console.log(`${req.user.username} renamed the folder to '${folder.name}'`);
-    res.redirect(`/folder/${parentId}`);
+    const movedFolder = await prisma.folders.update({
+      where: {
+        owner_id: req.user.id,
+        id: folderId,
+      },
+      data: {
+        parent_folder_id: newParentId,
+      },
+    });
+
+    res.redirect(`/folder/${newParentId}`);
   } catch (err) {
-    console.log("rename folder error ", err);
-    res.status(500).render("error", { message: "could not rename folder" });
-  }});
+    console.log("move folder error: ", err);
+    res
+      .status(500)
+      .render("error", { message: "could not move folder", back: "/folder" });
+  }
+});
 
 folderRouter.delete("/:id/delete", verifyAuth, async (req, res) => {
   try {
