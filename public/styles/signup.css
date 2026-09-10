@@ -11,3 +11,7 @@ main {
 #hero {
     width: 25%;
 }
+
+#error {
+    color: red;
+}

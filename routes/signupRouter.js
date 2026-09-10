@@ -16,7 +16,7 @@ signupRouter.post("/", validateSignupForm, async (req, res) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).render("error", { message: "Invalid input", back: "/signup" });
+      return res.status(400).render("signup", { error: errors.array()[0].msg});
     }
 
     const { username, password } = req.body;
@@ -30,7 +30,7 @@ signupRouter.post("/", validateSignupForm, async (req, res) => {
       console.log("Signup post error: Username already exists");
       return res
         .status(400)
-        .render("error", { message: "Username already exists", back: "/signup" });
+        .render("signup", { error: "Username already exists"});
     }
 
     const hashedPw = bcrypt.hashSync(password, 10);
