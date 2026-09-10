@@ -10,6 +10,14 @@ const validateSignupForm = [
     isAlphanumeric()
 ];
 
+const validateRenameFolder = [
+    body('new-name').
+    notEmpty().withMessage('folder name cannot be empty').
+    isLength({min: 1, max: 100}).
+    isAlphanumeric().withMessage('folder name must be alphanumeric')
+];
+
 module.exports = {
-    validateLoginForm
+    validateSignupForm,
+    validateRenameFolder
 }

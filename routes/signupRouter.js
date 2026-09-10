@@ -2,15 +2,22 @@ const signupRouter = require("express").Router();
 const passport = require("passport");
 const prisma = require("../config/prisma");
 const bcrypt = require("bcrypt");
+const { validateSignupForm } = require("../middlewares/formValidation");
+const { validationResult } = require("express-validator");
 
 signupRouter.get("/", (req, res) => {
   res.render("signup");
 });
 
-signupRouter.post("/", async (req, res) => {
+signupRouter.post("/", validateSignupForm, async (req, res) => {
   try {
     console.log(req.body);
     console.log(typeof req.body);
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).render("error", { message: "Invalid input", back: "/signup" });
+    }
 
     const { username, password } = req.body;
 
