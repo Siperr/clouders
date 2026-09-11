@@ -17,7 +17,17 @@ const validateRenameFolder = [
     isAlphanumeric().withMessage('Folder name must be alphanumeric')
 ];
 
+
+const validateRenameFile = [
+    body('new-file-name').
+    notEmpty().withMessage('File name cannot be empty').
+    isLength({min: 1, max: 100}).
+    isAlphanumeric().withMessage('File name must be alphanumeric')
+];
+
+
 module.exports = {
     validateSignupForm,
-    validateRenameFolder
+    validateRenameFolder,
+    validateRenameFile
 }

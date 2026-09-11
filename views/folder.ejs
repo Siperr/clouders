@@ -116,6 +116,20 @@
             closeMenu('folder', folderId);
         }
 
+        function renameFile(fileId, parentId) {
+            const renameForm = `<div class="modal-container">
+                <form id="rename-form" action="/file/${fileId}/rename?parent_id=${parentId}" method="POST">
+                    <input type="text" id="new-file-name" name="new-file-name" placeholder="New file name" required>
+                    <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                    <button id="rename-btn" type="submit">Rename</button>
+                </form>
+                </div>`;
+
+            const folderContent = document.getElementById('folder-contents');
+            folderContent.insertAdjacentHTML('beforeend', renameForm);
+            closeMenu('file', fileId);
+        }
+
         function cancelModal() {
             const modal = document.getElementsByClassName('modal-container')[0];
             if(modal)
@@ -151,7 +165,7 @@
             console.log('options: ', options);
 
             const moveForm = `<div class="modal-container">
-                <div id="move-folder-content">
+                <div id="move-form-content">
                 <h2>Move Folder "${folderName}"</h2>
                 <p>Current position: ${parentName}</p>
                 <form id="move-form" action="/folder/${folderId}/move?parent_id=${parentId}" method="POST">
@@ -171,7 +185,56 @@
             folderContent.insertAdjacentHTML('beforeend', moveForm);
             closeMenu('folder', folderId);
         }
-        
+
+        async function moveFile(fileName, fileId, parentName, parentId) {
+            console.log("moveFile, fileid: ", fileId, "parentId: ", parentId);
+            const folders = await fetch('/folder/all');
+            console.log("folders: ", folders);
+            const foldersTree = await folders.json();
+            console.log("foldersTree: ", foldersTree);
+
+            function createOptions(node, level = 0){
+                let result = [];
+
+                result.push({
+                    name: node.name,
+                    id: node.id,
+                    level: level
+                });
+
+                for(const n of node.children) {
+                    result.push(...createOptions(n, level+1));
+                }
+
+                return result;
+            }
+
+            let options = createOptions(foldersTree);
+
+            console.log('options: ', options);
+
+            const moveForm = `<div class="modal-container">
+                <div id="move-form-content">
+                <h2>Move File "${fileName}"</h2>
+                <p>Current position: ${parentName}</p>
+                <form id="move-form" action="/file/${fileId}/move?parent_id=${parentId}" method="POST">
+                    <label for="new-parent-folder">Move to:</label>
+                    <select id="new-parent-folder" name="new-parent-folder" required>
+                        ${options.map( o => {
+                            return `<option value="${o.id}">${o.level !== 0 ? '|' : ''}${"--".repeat(o.level)} ${o.name}</option>`;
+                        })}
+                    </select>
+                    <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                    <button id="move-btn" type="submit">Move</button>
+                </form>
+                </div>
+                </div>`;
+
+            const folderContent = document.getElementById('folder-contents');
+            folderContent.insertAdjacentHTML('beforeend', moveForm);
+            closeMenu('file', fileId);
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
         const addBtn = document.getElementById("add-btn");
         const menu = document.getElementById("add-menu");

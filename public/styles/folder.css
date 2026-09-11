@@ -282,7 +282,7 @@ p {
     background-color: white;
 }
 
-#move-folder-content {
+#move-form-content {
     background-color: white;
     display: flex;
     flex-direction: column;
@@ -293,7 +293,7 @@ p {
     z-index: 9999;
 }
 
-#move-folder-content p {
+#move-form-content p {
     width: 100%;
     padding: 0;
 }
