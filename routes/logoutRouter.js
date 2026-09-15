@@ -6,7 +6,7 @@ logoutRouter.post("/", (req, res) => {
       console.error(err);
       return res.status(500).render("error", { message: "Error logging out" });
     }
-    res.redirect("/login");
+    res.redirect("/");
   });
 });
 

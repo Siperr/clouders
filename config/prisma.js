@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 const { PrismaPg } = require("@prisma/adapter-pg");
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Permission } = require("@prisma/client");
 
 dotenv.config();
 
@@ -12,4 +12,7 @@ const prisma = new PrismaClient({
   }),
 });
 
-module.exports = prisma;
+module.exports = {
+  prisma,
+  Permission
+};

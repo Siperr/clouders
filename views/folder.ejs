@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/styles/global.css">
     <link rel="stylesheet" href="/styles/folder.css">
+    <link rel="stylesheet" href="/styles/sidebar.css">
     <script defer>
         function addFile() {
             const currFolder = window.location.pathname.split("/")[2] || "";
@@ -104,7 +105,7 @@
 
         function renameFolder(folderId, parentId) {
             const renameForm = `<div class="modal-container">
-                <form id="rename-form" action="/folder/${folderId}/rename?parent_id=${parentId}" method="POST">
+                <form id="rename-form" class='folder-form' action="/folder/${folderId}/rename?parent_id=${parentId}" method="POST">
                     <input type="text" id="new-folder-name" name="new-name"placeholder="New folder name" required>
                     <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
                     <button id="rename-btn" type="submit">Rename</button>
@@ -118,7 +119,7 @@
 
         function renameFile(fileId, parentId) {
             const renameForm = `<div class="modal-container">
-                <form id="rename-form" action="/file/${fileId}/rename?parent_id=${parentId}" method="POST">
+                <form id="rename-form" class='folder-form' action="/file/${fileId}/rename?parent_id=${parentId}" method="POST">
                     <input type="text" id="new-file-name" name="new-file-name" placeholder="New file name" required>
                     <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
                     <button id="rename-btn" type="submit">Rename</button>
@@ -168,7 +169,7 @@
                 <div id="move-form-content">
                 <h2>Move Folder "${folderName}"</h2>
                 <p>Current position: ${parentName}</p>
-                <form id="move-form" action="/folder/${folderId}/move?parent_id=${parentId}" method="POST">
+                <form id="move-form" class='folder-form' action="/folder/${folderId}/move?parent_id=${parentId}" method="POST">
                     <label for="new-parent-folder">Move to:</label>
                     <select id="new-parent-folder" name="new-parent-folder" required>
                         ${options.map( o => {
@@ -186,12 +187,9 @@
             closeMenu('folder', folderId);
         }
 
-        async function moveFile(fileName, fileId, parentName, parentId) {
-            console.log("moveFile, fileid: ", fileId, "parentId: ", parentId);
-            const folders = await fetch('/folder/all');
-            console.log("folders: ", folders);
-            const foldersTree = await folders.json();
-            console.log("foldersTree: ", foldersTree);
+        function moveFile(fileName, fileId, parentName, parentId, folderTree) {
+
+            const foldersTree = JSON.parse(folderTree);
 
             function createOptions(node, level = 0){
                 let result = [];
@@ -211,13 +209,13 @@
 
             let options = createOptions(foldersTree);
 
-            console.log('options: ', options);
+            // console.log('options: ', options);
 
             const moveForm = `<div class="modal-container">
                 <div id="move-form-content">
                 <h2>Move File "${fileName}"</h2>
                 <p>Current position: ${parentName}</p>
-                <form id="move-form" action="/file/${fileId}/move?parent_id=${parentId}" method="POST">
+                <form id="move-form" class='folder-form' action="/file/${fileId}/move?parent_id=${parentId}" method="POST">
                     <label for="new-parent-folder">Move to:</label>
                     <select id="new-parent-folder" name="new-parent-folder" required>
                         ${options.map( o => {
@@ -233,6 +231,26 @@
             const folderContent = document.getElementById('folder-contents');
             folderContent.insertAdjacentHTML('beforeend', moveForm);
             closeMenu('file', fileId);
+        }
+
+        function shareFolder(folderId, parentId) {
+            const shareForm = `<div class="modal-container">
+                <form id="share-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
+                    <label for="username">Share with (username):</label>
+                    <input type="text" id="username" name="username" placeholder="Enter username" required>
+                    <label for="permission">Permission:</label>
+                    <select id="permission" name="permission" required>
+                        <option value="read">Read</option>
+                        <option value="write">Write</option>
+                     </select>               
+                    <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                    <button id="share-btn" type="submit">Share</button>
+                </form>
+                </div>`;
+
+            const folderContent = document.getElementById('folder-contents');
+            folderContent.insertAdjacentHTML('beforeend', shareForm);
+            closeMenu('folder', folderId);
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -265,32 +283,41 @@
 </head>
 <body>
     <%- include('partials/header', {user}) %>
-    <div id="path-nav">
-        <svg id='back' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onclick="goBack('<%= pathParts.length <= 2 ? pathParts[0].id : pathParts[1].id %>')"><title>Back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
-        <div id="path">
-            <% pathParts.forEach((element, index) => { %>
-                <p><a href="/folder/<%= element.id %>">
-                    <%= element.name %>
-                </a></p>
-                <p>></p>
-            <% }); %>
-        </div>
-    </div>
     <main>
+        <%- include('partials/sidebar', {folderTree, sharedFolders}) %>
         <div id="folder-contents">
-            <% if (!folder.other_folders?.length && !folder.files?.length) { %>
-                <p id="empty-message">This folder is empty.</p>
+            <% if( locals.sharedInfo && locals.sharedInfo.permission !== "OWNER" ) { %>
+                <div class="util-bar" id="shared-info">
+                    <p>This folder is shared with you by <strong><%= sharedInfo.sharedBy %></strong> with <strong><%= sharedInfo.permission %></strong> permission.</p>
+                </div>
             <% } else { %>
-
-                <% folder.other_folders?.forEach(subfolder => { %>
-                    <%- include('partials/subfolder', {subfolder}) %>
-                <% }) %>
-
-                <% folder.files?.forEach(file => { %>
-                    <%- include('partials/file', {file}) %>
-                <% }) %>
-
+                <div id="path-nav">
+                    <svg id='back' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onclick="goBack('<%= pathParts.length <= 2 ? pathParts[0].id : pathParts.slice().reverse()[1].id %>')"><title>Back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+                    <div class="util-bar" id="path">
+                        <% pathParts.forEach((element, index) => { %>
+                            <p><a href="/folder/<%= element.id %>">
+                                <%= element.name %>
+                            </a></p>
+                            <span>></span>
+                        <% }); %>
+                    </div>
+                </div>
             <% } %>
+            <div id="contents">
+                <% if (!folder.other_folders?.length && !folder.files?.length) { %>
+                    <p id="empty-message">This folder is empty.</p>
+                <% } else { %>
+
+                    <% folder.other_folders?.forEach(subfolder => { %>
+                        <%- include('partials/subfolder', {subfolder}) %>
+                    <% }) %>
+
+                    <% folder.files?.forEach(file => { %>
+                        <%- include('partials/file', {file}) %>
+                    <% }) %>
+
+                <% } %>
+            </div>
             <button id="add-btn"><img src="/assets/images/add.svg"></button>
             <div id="add-menu" hidden>
                 <h3>New</h3>

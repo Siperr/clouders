@@ -4,7 +4,7 @@ const passport = require('passport');
 const { PrismaSessionStore } = require('@quixo3/prisma-session-store');
 const { PrismaClient } = require('@prisma/client');
 const verifyAuth = require('./middlewares/auth');
-const prisma = require('./config/prisma');
+const { prisma } = require('./config/prisma');
 const path = require("path");
 const app = express();
 

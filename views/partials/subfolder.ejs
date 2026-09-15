@@ -9,6 +9,7 @@
             <li onClick="deleteFolder('<%= subfolder.id %>')">Delete</li>
             <li onClick="renameFolder('<%= subfolder.id %>', '<%= subfolder.parent_folder_id %>')">Rename</li>
             <li onClick="moveFolder('<%= subfolder.name %>', '<%= subfolder.id %>', '<%= folder.name %>', '<%= subfolder.parent_folder_id %>')">Move</li>
+            <li onClick="shareFolder('<%= subfolder.id %>')">Share</li>
         </ul>
     </div>
     <p class="folder-name"><%= subfolder.name %></p>

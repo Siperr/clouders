@@ -51,7 +51,7 @@
   --color-text-accent: #434343;
 
   --bg: #fbf9f2;
-
+  --bg-secondary: #f9f7ef1f;
   --hover: #c9cdd234;
 }
 
@@ -72,10 +72,14 @@ h6 {
   box-sizing: border-box;
 }
 
+html {
+  background-color: var(--bg-secondary);
+}
+
 body {
   font-family: var(--font-text);
   min-height: 100vh;
-  background-color: var(--bg);
+  background-color: var(--bg-secondary);
   padding: 20px 40px;
   font-size: var(--font-size-text);
 }
@@ -102,6 +106,7 @@ header {
   align-items: center;
   width: 100%;
   margin-bottom: 20px;
+  background-color: var(--bg-secondary);
 }
 
 header ul {

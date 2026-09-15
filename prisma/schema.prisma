@@ -43,9 +43,16 @@ model session {
   @@map("sessions")
 }
 
+enum Permission {
+  READ
+  WRITE
+  OWNER
+}
+
 model shared_folders {
   folder_id Int
   user_id   Int
+  permission Permission @default(READ)
   folders   folders @relation(fields: [folder_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users     users   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 

@@ -25,9 +25,20 @@ const validateRenameFile = [
     isAlphanumeric().withMessage('File name must be alphanumeric')
 ];
 
+const validateShareFolder = [
+    body('username').
+    notEmpty().withMessage('Username cannot be empty').
+    isAlphanumeric().withMessage('Username must be alphanumeric').
+    isLength({min: 4, max: 100}),
+    body('permission').
+    notEmpty().withMessage('Permission cannot be empty').
+    isIn(['read', 'write']).withMessage('Permission must be either read or write')
+];
+
 
 module.exports = {
     validateSignupForm,
     validateRenameFolder,
-    validateRenameFile
+    validateRenameFile,
+    validateShareFolder
 }

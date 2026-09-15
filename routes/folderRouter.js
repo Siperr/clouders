@@ -1,7 +1,10 @@
-const prisma = require("../config/prisma");
-const verifyAuth = require("../middlewares/auth");
+const { prisma, Permission } = require("../config/prisma");
+const { verifyAuth, checkPermission } = require("../middlewares/auth");
 const folderRouter = require("express").Router();
-const { validateRenameFolder } = require("../middlewares/formValidation");
+const {
+  validateRenameFolder,
+  validateShareFolder,
+} = require("../middlewares/formValidation");
 const { validationResult } = require("express-validator");
 const {
   getPath,
@@ -66,7 +69,7 @@ folderRouter.get("/", verifyAuth, async (req, res) => {
   res.redirect(`/folder/${folder.id}`);
 });
 
-folderRouter.get("/:id", verifyAuth, showFolder);
+folderRouter.get("/:id", verifyAuth, checkPermission, showFolder);
 
 folderRouter.post("/", verifyAuth, async (req, res) => {
   try {
@@ -311,7 +314,119 @@ folderRouter.post("/:id/move", verifyAuth, async (req, res) => {
   }
 });
 
-folderRouter.delete("/:id/delete", verifyAuth, async (req, res) => {
+// folderRouter.get(
+//   "/:id/shared",
+//   verifyAuth,
+//   checkPermission,
+//   async (req, res, next) => {
+//     try {
+//       console.log(`req.permission: ${req.permission}`);
+//       if(!req.permission) {
+//         return res.status(403).render("error", {
+//           message: "You are not allowed to view this folder",
+//           back: `/folder`,
+//         });
+//       }
+
+//     } catch (err) {
+//       console.log("share folder error: ", err);
+//       return res.status(500).render("error", {
+//         message: "could not share folder",
+//         back: `/folder`,
+//       });
+//     }
+
+//     next();
+//   }, showFolder
+// );
+
+folderRouter.post(
+  "/:id/share",
+  verifyAuth,
+  validateShareFolder,
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).render("error", {
+          message: errors.array()[0].msg,
+          back: `/folder/${req.params.id}`,
+        });
+      }
+
+      const folderId = Number(req.params.id);
+      const { username, permission } = req.body;
+
+      // check if the user owns the folder
+      const folder = await prisma.folders.findUnique({
+        where: {
+          id: folderId,
+          owner_id: req.user.id,
+        },
+      });
+
+      if (!folder) {
+        return res.status(404).render("error", {
+          message: "folder not found",
+          back: `/folder`,
+        });
+      }
+
+      // create owner of the folder
+      const owner = await prisma.shared_folders.create({
+        data: {
+          folder_id: folderId,
+          user_id: req.user.id,
+          permission: Permission.OWNER,
+        },
+      });
+
+      if (!owner) {
+        throw new Error("Could not create owner of the shared folder");
+      }
+
+      // find the user to share the folder with
+      const userToShareWith = await prisma.users.findUnique({
+        where: {
+          username: username,
+        },
+      });
+
+      if (!userToShareWith) {
+        return res.status(404).render("error", {
+          message: "user not found",
+          back: `/folder/${folderId}`,
+        });
+      }
+
+      // create the shared folder entry
+      const sharedFolder = await prisma.shared_folders.create({
+        data: {
+          folder_id: folderId,
+          user_id: userToShareWith.id,
+          permission:
+            permission.toString().toUpperCase() === "READ"
+              ? Permission.READ
+              : Permission.WRITE,
+        },
+      });
+
+      if (!sharedFolder) {
+        throw new Error("Could not create shared folder entry");
+      }
+
+      res.redirect(`/folder/${folderId.parent_folder_id}`);
+    } catch (err) {
+      console.log("share folder error: ", err);
+      res.render("error", {
+        message: "could not share folder",
+        back: `/folder/${req.params.id}`,
+      });
+    }
+  },
+);
+
+folderRouter.delete("/:id/delete", verifyAuth, checkPermission, async (req, res) => {
   try {
     const folderId = Number(req.params.id);
 
