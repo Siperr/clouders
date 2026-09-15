@@ -1,0 +1,21 @@
+<li class="tree-node" data-id="<%= node.id %>">
+  <div class="node-row">
+    <% if (node.children && node.children.length > 0) { %>
+      <span class="toggle" onclick="toggleNode(event, this)">▶</span>
+    <% } else { %>
+      <span class="toggle-spacer"></span>
+    <% } %>
+
+    <a class="label" href="/folder/<%= node.id %>">
+      <%= node.name %>
+    </a>
+  </div>
+
+  <% if (node.children && node.children.length > 0) { %>
+    <ul class="children" style="display:none;">
+      <% node.children.forEach(function(child) { %>
+        <%- include('collapsibleList', { node: child }) %>
+      <% }); %>
+    </ul>
+  <% } %>
+</li>

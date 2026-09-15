@@ -1,0 +1,38 @@
+<script>
+  function toggleNode(event, toggleEl) {
+    event.preventDefault();
+    event.stopPropagation(); 
+
+    const li = toggleEl.closest('li.tree-node');
+    const childrenUl = li.querySelector(':scope > ul.children');
+    if (!childrenUl) return;
+
+    const isOpen = childrenUl.style.display !== 'none';
+    childrenUl.style.display = isOpen ? 'none' : 'block';
+    toggleEl.textContent = isOpen ? '▶' : '▼';
+    toggleEl.classList.toggle('open', !isOpen);
+  }
+</script>
+<div id="sidebar">
+    <div id="folder-tree">
+        <h3>Your cloud</h3>
+        <ul id="own-folders">
+            <%- include('collapsibleList', { node: folderTree }) %>
+        </ul>
+    </div>
+    <div id="shared-folders-tree">
+        <h3>Shared with you</h3>
+        <ul id="shared-folders">
+            <% console.log("sharedFolders: ", sharedFolders); %>
+            <% if (sharedFolders && sharedFolders.length > 0) { %>
+                <% sharedFolders.forEach(folder => { %>
+                    <li class="tree-node">
+                        <a href="/folder/<%= folder.folders.id %>"><%= folder.folders.name %></a>
+                    </li>
+                <% }) %>
+            <% } else { %>
+                <li>No shared folders</li>
+            <% } %>
+        </ul>
+    </div>
+</div>
