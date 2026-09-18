@@ -233,20 +233,44 @@
             closeMenu('file', fileId);
         }
 
-        function shareFolder(folderId, parentId) {
+        function shareFolder(folderId, parentId, sharedList) {
             const shareForm = `<div class="modal-container">
-                <form id="share-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
-                    <label for="username">Share with (username):</label>
-                    <input type="text" id="username" name="username" placeholder="Enter username" required>
-                    <label for="permission">Permission:</label>
-                    <select id="permission" name="permission" required>
-                        <option value="read">Read</option>
-                        <option value="write">Write</option>
-                     </select>               
-                    <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
-                    <button id="share-btn" type="submit">Share</button>
-                </form>
-                </div>`;
+                <div id='share-modal-content'>
+                    <div id='shared-list'>
+                        <h3>Already shared with:</h3>
+                        <ul>
+                            ${JSON.parse(sharedList).map( s => {
+                                return `<li><p>${s.username}</p>
+                                            <form id="update-permission-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
+                                                <input type="hidden" name="user_id" value="${s.id}">
+                                                <select name="permission">
+                                                    <option value="read" ${s.permission === "READ" ? "selected" : ""}>Read</option>
+                                                    <option value="write" ${s.permission === "WRITE" ? "selected" : ""}>Write</option>
+                                                </select>
+                                                <button type="submit"><img class='form-icon' src="/assets/images/tick-icon.svg" alt="Update"></button>
+                                            </form>
+                                            <form id="unshare-form" class='folder-form' action="/folder/${folderId}/unshare" method="POST">
+                                                <input type="hidden" name="delete" value="${s.id}">
+                                                <button type="submit"><img class='form-icon' src="/assets/images/delete-icon.svg" alt="Delete"></button>
+                                            </form>
+                                        </li>`;
+                            }).join('')}
+                        </ul>
+                    </div>
+                    <div class="divider"></div>
+                    <form id="share-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
+                        <label for="username">Share with (username):</label>
+                        <input type="text" id="username" name="username" placeholder="Enter username" required>
+                        <label for="permission">Permission:</label>
+                        <select id="permission" name="permission" required>
+                            <option value="read">Read</option>
+                            <option value="write">Write</option>
+                        </select>               
+                        <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                        <button id="share-btn" type="submit">Share</button>
+                    </form>
+                </div>
+            </div>`;
 
             const folderContent = document.getElementById('folder-contents');
             folderContent.insertAdjacentHTML('beforeend', shareForm);
@@ -301,6 +325,9 @@
                             <span>></span>
                         <% }); %>
                     </div>
+                    <% if((locals.sharedInfo && locals.sharedInfo.permission === "OWNER")) { %>
+                        <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= folder.parent_folder_id %>', '<%= JSON.stringify(sharedWith) %>')">
+                    <% } %>
                 </div>
             <% } %>
             <div id="contents">
@@ -318,15 +345,17 @@
 
                 <% } %>
             </div>
-            <button id="add-btn"><img src="/assets/images/add.svg"></button>
-            <div id="add-menu" hidden>
-                <h3>New</h3>
-                <hr>
-                <ul>
-                    <li id='add-file' onClick="addFile()">File</li>
-                    <li id='add-folder' onClick="addFolder()">Folder</li>
-                </ul>
-            </div>
+            <% if(!locals.sharedInfo || locals.sharedInfo.permission !== "READ") { %>
+                <button id="add-btn"><img src="/assets/images/add.svg"></button>
+                <div id="add-menu" hidden>
+                    <h3>New</h3>
+                    <hr>
+                    <ul>
+                        <li id='add-file' onClick="addFile()">File</li>
+                        <li id='add-folder' onClick="addFolder()">Folder</li>
+                    </ul>
+                </div>
+            <% } %>
         </div>
     </main>
 </body>

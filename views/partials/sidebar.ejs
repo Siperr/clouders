@@ -21,13 +21,12 @@
         </ul>
     </div>
     <div id="shared-folders-tree">
-        <h3>Shared with you</h3>
+        <h3><a href="/folder/shared-with-you">Shared with you</a></h3>
         <ul id="shared-folders">
-            <% console.log("sharedFolders: ", sharedFolders); %>
-            <% if (sharedFolders && sharedFolders.length > 0) { %>
-                <% sharedFolders.forEach(folder => { %>
+            <% if (locals.sharedFolders && sharedFolders.length > 0) { %>
+                <% sharedFolders.forEach(sf => { %>
                     <li class="tree-node">
-                        <a href="/folder/<%= folder.folders.id %>"><%= folder.folders.name %></a>
+                        <a href="/folder/<%= sf.folder_id %>"><%= sf.folders.name %></a>
                     </li>
                 <% }) %>
             <% } else { %>

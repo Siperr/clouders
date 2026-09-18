@@ -1,6 +1,10 @@
 <div class="folder" id="folder-<%= subfolder.id %>">
     <div class="icon-menu">
-        <img class="folder-icon" src="/assets/images/folder-icon.svg" onclick="openFolder('<%= subfolder.id %>')">
+        <% if (subfolder.shared) { %>
+            <img class="folder-icon" src="/assets/images/shared-folder-icon.svg" alt="shared folder icon" onclick="openFolder('<%= subfolder.id %>')">
+        <% } else { %>
+            <img class="folder-icon" src="/assets/images/folder-icon.svg" alt="folder icon" onclick="openFolder('<%= subfolder.id %>')">
+        <% } %>
         <svg onclick="showMenu('folder', '<%= subfolder.id %>')" class='menu-btn' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z" /></svg>
     </div>
     <div class="menu" hidden>

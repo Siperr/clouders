@@ -12,6 +12,7 @@ const {
   getFolder,
   showFolder,
   createFolderTree,
+  showAllSharedFolders,
 } = require("../lib/folderUtils");
 
 const crypto = require("crypto");
@@ -68,6 +69,8 @@ folderRouter.get("/", verifyAuth, async (req, res) => {
   const folder = await getFolder(req.user.id);
   res.redirect(`/folder/${folder.id}`);
 });
+
+folderRouter.get("/shared-with-you", verifyAuth, showAllSharedFolders);
 
 folderRouter.get("/:id", verifyAuth, checkPermission, showFolder);
 
@@ -175,31 +178,53 @@ folderRouter.post("/:id/new-folder", verifyAuth, async (req, res) => {
   }
 });
 
-folderRouter.get("/:id/upload", verifyAuth, async (req, res) => {
-  try {
-    const folderId = Number(req.params.id);
-    const folder = await getFolder(req.user.id, folderId);
-
-    if (!folder) {
-      return res.status(404).render("error", {
-        message: "folder not found",
-        back: `/folder/`,
+folderRouter.get(
+  "/:id/upload",
+  verifyAuth,
+  checkPermission,
+  async (req, res) => {
+    if (req.permission && req.permission === Permission.READ) {
+      return res.status(403).render("error", {
+        message: "You are not allowed to upload to this shared folder",
+        back: `/folder/${req.params.id}`,
       });
     }
-    const path = await getPath(folder);
-    const actionString = `/folder/${folderId}/upload`;
-    res.render("upload", { path, actionString });
-  } catch (err) {
-    console.log("upload page error: ", err);
-    res
-      .status(500)
-      .render("error", { message: err, back: `/folder/${folderId}` });
-  }
-});
+
+    try {
+      const folderId = Number(req.params.id);
+      const folder = await getFolder(req.user.id, folderId);
+
+      if (!folder) {
+        return res.status(404).render("error", {
+          message: "folder not found",
+          back: `/folder/`,
+        });
+      }
+      const path = await getPath(folder);
+      const actionString = `/folder/${folderId}/upload`;
+      res.render("upload", { path, actionString });
+    } catch (err) {
+      console.log("upload page error: ", err);
+      res
+        .status(500)
+        .render("error", { message: err, back: `/folder/${folderId}` });
+    }
+  },
+);
 
 folderRouter.post(
   "/:id/upload",
   verifyAuth,
+  checkPermission,
+  (req, res, next) => {
+    if (req.permission && req.permission === Permission.READ) {
+      return res.status(403).render("error", {
+        message: "You are not allowed to upload to this shared folder",
+        back: `/folder/${req.params.id}`,
+      });
+    }
+    next();
+  },
   upload.single("file"),
   async (req, res) => {
     try {
@@ -239,7 +264,15 @@ folderRouter.post(
   "/:id/rename",
   verifyAuth,
   validateRenameFolder,
+  checkPermission,
   async (req, res) => {
+    if (req.permission && req.permission !== Permission.OWNER) {
+      return res.status(403).render("error", {
+        message: "You are not allowed to rename this shared folder",
+        back: `/folder`,
+      });
+    }
+
     try {
       const folderId = Number(req.params.id);
       const parentId = Number(req.query.parent_id) || null;
@@ -343,9 +376,47 @@ folderRouter.post("/:id/move", verifyAuth, async (req, res) => {
 folderRouter.post(
   "/:id/share",
   verifyAuth,
+  checkPermission,
   validateShareFolder,
   async (req, res) => {
+    console.log("share folder, req.body: ", req.body);
+
+    if(req.permission && req.permission !== Permission.OWNER) {
+      return res.status(403).render("error", {
+        message: "You are not allowed to operate on this shared folder",
+        back: `/folder`,
+      });
+    }
+
     try {
+      if (req.body.permission) {
+        const perms =
+          req.body.permission.toString().toUpperCase() === "READ"
+            ? Permission.READ
+            : Permission.WRITE;
+
+        const sharedFolder = await prisma.shared_folders.update({
+          where: {
+            folder_id_user_id: {
+              folder_id: Number(req.params.id),
+              user_id: Number(req.body.user_id),
+            },
+          },
+          data: {
+            permission: perms,
+          },
+        });
+
+        if (!sharedFolder) {
+          throw new Error(
+            "Could not update shared folder permission for user with id " +
+              req.user.id,
+          );
+        }
+
+        return res.redirect(`/folder/${req.params.id}`);
+      }
+
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).render("error", {
@@ -357,11 +428,13 @@ folderRouter.post(
       const folderId = Number(req.params.id);
       const { username, permission } = req.body;
 
-      // check if the user owns the folder
       const folder = await prisma.folders.findUnique({
         where: {
           id: folderId,
           owner_id: req.user.id,
+          parent_folder_id: {
+            not: null,
+          },
         },
       });
 
@@ -372,7 +445,6 @@ folderRouter.post(
         });
       }
 
-      // create owner of the folder
       const owner = await prisma.shared_folders.create({
         data: {
           folder_id: folderId,
@@ -385,7 +457,6 @@ folderRouter.post(
         throw new Error("Could not create owner of the shared folder");
       }
 
-      // find the user to share the folder with
       const userToShareWith = await prisma.users.findUnique({
         where: {
           username: username,
@@ -399,7 +470,6 @@ folderRouter.post(
         });
       }
 
-      // create the shared folder entry
       const sharedFolder = await prisma.shared_folders.create({
         data: {
           folder_id: folderId,
@@ -415,7 +485,7 @@ folderRouter.post(
         throw new Error("Could not create shared folder entry");
       }
 
-      res.redirect(`/folder/${folderId.parent_folder_id}`);
+      res.redirect(`/folder/${folder.parent_folder_id}`);
     } catch (err) {
       console.log("share folder error: ", err);
       res.render("error", {
@@ -426,42 +496,89 @@ folderRouter.post(
   },
 );
 
-folderRouter.delete("/:id/delete", verifyAuth, checkPermission, async (req, res) => {
+folderRouter.post("/:id/unshare", verifyAuth, checkPermission, async (req, res) => {
+  if(req.permission && req.permission !== Permission.OWNER) {
+    return res.status(403).render("error", {
+      message: "You are not allowed to operate on this shared folder",
+      back: `/folder`,
+    });
+  }
+  
   try {
-    const folderId = Number(req.params.id);
-
-    const folder = await prisma.folders.findFirst({
+    const deletedSharedFolder = await prisma.shared_folders.delete({
       where: {
-        id: folderId,
-        owner_id: req.user.id,
+        folder_id_user_id: {
+          folder_id: Number(req.params.id),
+          user_id: Number(req.body.delete),
+        },
       },
     });
 
-    if (!folder) {
-      return res.status(404).render("error", {
-        message: "folder not found",
+    if (!deletedSharedFolder) {
+      throw new Error(
+        "Could not delete shared folder entry for user with id " +
+          req.body.delete,
+      );
+    }
+
+    return res.redirect(`/folder/${req.params.id}`);
+  } catch (err) {
+    console.log("unshare folder error: ", err);
+    res.render("error", {
+      message: "could not unshare folder",
+      back: `/folder/${req.params.id}`,
+    });
+  }
+});
+
+folderRouter.delete(
+  "/:id/delete",
+  verifyAuth,
+  checkPermission,
+  async (req, res) => {
+    if (req.permission && req.permission !== Permission.OWNER) {
+      return res.status(403).render("error", {
+        message: "You are not allowed to delete this shared folder",
         back: `/folder`,
       });
     }
 
-    if (folder.parent_folder_id === null) {
-      return res.status(400).render("error", {
-        message: "Cannot delete root folder",
+    try {
+      const folderId = Number(req.params.id);
+
+      const folder = await prisma.folders.findFirst({
+        where: {
+          id: folderId,
+          owner_id: req.user.id,
+        },
       });
+
+      if (!folder) {
+        return res.status(404).render("error", {
+          message: "folder not found",
+          back: `/folder`,
+        });
+      }
+
+      if (folder.parent_folder_id === null) {
+        return res.status(400).render("error", {
+          message: "Cannot delete root folder",
+        });
+      }
+
+      const folderToDelete = await prisma.folders.delete({
+        where: {
+          id: folder.id,
+        },
+      });
+
+      console.log(`${req.user.username} deleted the '${folder.name}' folder`);
+      res.redirect(200, `/folder/${folder.parent_folder_id}`);
+    } catch (err) {
+      console.log("delete folder error ", err);
+      res.status(500).render("error", { message: "could not delete folder" });
     }
-
-    const folderToDelete = await prisma.folders.delete({
-      where: {
-        id: folder.id,
-      },
-    });
-
-    console.log(`${req.user.username} deleted the '${folder.name}' folder`);
-    res.redirect(200, `/folder/${folder.parent_folder_id}`);
-  } catch (err) {
-    console.log("delete folder error ", err);
-    res.status(500).render("error", { message: "could not delete folder" });
-  }
-});
+  },
+);
 
 module.exports = folderRouter;
