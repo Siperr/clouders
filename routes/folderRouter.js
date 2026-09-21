@@ -381,7 +381,7 @@ folderRouter.post(
   async (req, res) => {
     console.log("share folder, req.body: ", req.body);
 
-    if(req.permission && req.permission !== Permission.OWNER) {
+    if (req.permission && req.permission !== Permission.OWNER) {
       return res.status(403).render("error", {
         message: "You are not allowed to operate on this shared folder",
         back: `/folder`,
@@ -389,7 +389,7 @@ folderRouter.post(
     }
 
     try {
-      if (req.body.permission) {
+      if (req.body.permission_update) {
         const perms =
           req.body.permission.toString().toUpperCase() === "READ"
             ? Permission.READ
@@ -445,16 +445,27 @@ folderRouter.post(
         });
       }
 
-      const owner = await prisma.shared_folders.create({
-        data: {
+      //check if the folder has already registered the owner
+
+      const existingOwner = await prisma.shared_folders.findFirst({
+        where: {
           folder_id: folderId,
           user_id: req.user.id,
-          permission: Permission.OWNER,
         },
       });
 
-      if (!owner) {
-        throw new Error("Could not create owner of the shared folder");
+      if (!existingOwner) {
+        const owner = await prisma.shared_folders.create({
+          data: {
+            folder_id: folderId,
+            user_id: req.user.id,
+            permission: Permission.OWNER,
+          },
+        });
+
+        if (!owner) {
+          throw new Error("Could not create owner of the shared folder");
+        }
       }
 
       const userToShareWith = await prisma.users.findUnique({
@@ -496,40 +507,60 @@ folderRouter.post(
   },
 );
 
-folderRouter.post("/:id/unshare", verifyAuth, checkPermission, async (req, res) => {
-  if(req.permission && req.permission !== Permission.OWNER) {
-    return res.status(403).render("error", {
-      message: "You are not allowed to operate on this shared folder",
-      back: `/folder`,
-    });
-  }
-  
-  try {
-    const deletedSharedFolder = await prisma.shared_folders.delete({
-      where: {
-        folder_id_user_id: {
-          folder_id: Number(req.params.id),
-          user_id: Number(req.body.delete),
+folderRouter.post(
+  "/:id/unshare",
+  verifyAuth,
+  checkPermission,
+  async (req, res) => {
+    if (req.permission && req.permission !== Permission.OWNER) {
+      const detachFolder = await prisma.shared_folders.delete({
+        where: {
+          folder_id_user_id: {
+            folder_id: Number(req.params.id),
+            user_id: req.user.id,
+          },
         },
-      },
-    });
+      });
 
-    if (!deletedSharedFolder) {
-      throw new Error(
-        "Could not delete shared folder entry for user with id " +
-          req.body.delete,
-      );
+      if (!detachFolder) {
+        return res.status(404).render("error", {
+          message:
+            "Could not detach shared folder entry for user with id " +
+            req.user.id,
+          back: `/folder/`,
+        });
+      }
+
+      return res.redirect(`/folder/`);
     }
 
-    return res.redirect(`/folder/${req.params.id}`);
-  } catch (err) {
-    console.log("unshare folder error: ", err);
-    res.render("error", {
-      message: "could not unshare folder",
-      back: `/folder/${req.params.id}`,
-    });
-  }
-});
+    try {
+      const deletedSharedFolder = await prisma.shared_folders.delete({
+        where: {
+          folder_id_user_id: {
+            folder_id: Number(req.params.id),
+            user_id: Number(req.body.delete),
+          },
+        },
+      });
+
+      if (!deletedSharedFolder) {
+        throw new Error(
+          "Could not delete shared folder entry for user with id " +
+            req.body.delete,
+        );
+      }
+
+      return res.redirect(`/folder/${req.params.id}`);
+    } catch (err) {
+      console.log("unshare folder error: ", err);
+      res.render("error", {
+        message: "could not unshare folder",
+        back: `/folder/${req.params.id}`,
+      });
+    }
+  },
+);
 
 folderRouter.delete(
   "/:id/delete",

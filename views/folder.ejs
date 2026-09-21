@@ -233,47 +233,92 @@
             closeMenu('file', fileId);
         }
 
-        function shareFolder(folderId, parentId, sharedList) {
+        function shareFolder(folderId, sharedList) {
+            const innerList = JSON.parse(sharedList).length > 0 ? JSON.parse(sharedList).map( s => {
+                return `<li><p>${s.username}</p>
+                            <form id="update-permission-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
+                                <input type="hidden" name="user_id" value="${s.id}">
+                                <select name="permission_update">
+                                    <option value="read" ${s.permission === "READ" ? "selected" : ""}>Read</option>
+                                    <option value="write" ${s.permission === "WRITE" ? "selected" : ""}>Write</option>
+                                </select>
+                                <button type="submit"><img class='form-icon' src="/assets/images/tick-icon.svg" alt="Update"></button>
+                            </form>
+                            <form id="unshare-form" class='folder-form' action="/folder/${folderId}/unshare" method="POST">
+                                <input type="hidden" name="delete" value="${s.id}">
+                                <button type="submit"><img class='form-icon' src="/assets/images/delete-icon.svg" alt="Delete"></button>
+                            </form>
+                        </li>`;
+            }).join('') : `<li><p>No users</p></li>`;
             const shareForm = `<div class="modal-container">
                 <div id='share-modal-content'>
                     <div id='shared-list'>
                         <h3>Already shared with:</h3>
                         <ul>
-                            ${JSON.parse(sharedList).map( s => {
-                                return `<li><p>${s.username}</p>
-                                            <form id="update-permission-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
-                                                <input type="hidden" name="user_id" value="${s.id}">
-                                                <select name="permission">
-                                                    <option value="read" ${s.permission === "READ" ? "selected" : ""}>Read</option>
-                                                    <option value="write" ${s.permission === "WRITE" ? "selected" : ""}>Write</option>
-                                                </select>
-                                                <button type="submit"><img class='form-icon' src="/assets/images/tick-icon.svg" alt="Update"></button>
-                                            </form>
-                                            <form id="unshare-form" class='folder-form' action="/folder/${folderId}/unshare" method="POST">
-                                                <input type="hidden" name="delete" value="${s.id}">
-                                                <button type="submit"><img class='form-icon' src="/assets/images/delete-icon.svg" alt="Delete"></button>
-                                            </form>
-                                        </li>`;
-                            }).join('')}
+                            ${innerList}
                         </ul>
                     </div>
                     <div class="divider"></div>
-                    <form id="share-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
-                        <label for="username">Share with (username):</label>
-                        <input type="text" id="username" name="username" placeholder="Enter username" required>
-                        <label for="permission">Permission:</label>
-                        <select id="permission" name="permission" required>
-                            <option value="read">Read</option>
-                            <option value="write">Write</option>
-                        </select>               
-                        <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
-                        <button id="share-btn" type="submit">Share</button>
-                    </form>
+                    <div id='share-form-container'>
+                        <h3>Share with new user:</h3>
+                        <form id="share-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" placeholder="Enter username" required>
+                            <label for="permission">Permission</label>
+                            <select id="permission" name="permission" required>
+                                <option value="read">Read</option>
+                                <option value="write">Write</option>
+                            </select>               
+                            <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                            <button id="share-btn" type="submit">Share</button>
+                        </form>
+                    </div>
                 </div>
             </div>`;
 
             const folderContent = document.getElementById('folder-contents');
             folderContent.insertAdjacentHTML('beforeend', shareForm);
+            closeMenu('folder', folderId);
+        }
+
+        function shareFolderFormOnly(folderId) {
+            const shareForm = `<div class="modal-container">
+                <div id='share-modal-content'>
+                    <div id='share-form-container'>
+                        <h3>Share with new user:</h3>
+                        <form id="share-form" class='folder-form' action="/folder/${folderId}/share" method="POST">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" placeholder="Enter username" required>
+                            <label for="permission">Permission</label>
+                            <select id="permission" name="permission" required>
+                                <option value="read">Read</option>
+                                <option value="write">Write</option>
+                            </select>               
+                            <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                            <button id="share-btn" type="submit">Share</button>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+
+            const folderContent = document.getElementById('folder-contents');
+            folderContent.insertAdjacentHTML('beforeend', shareForm);
+            closeMenu('folder', folderId);
+        }
+
+        function unshareFolder(folderId) {
+            const unshareForm = `<div class="modal-container">
+                <div class="modal-content">
+                    <form id="unshare-form" class='folder-form' action="/folder/${folderId}/unshare" method="POST">
+                        <p>Are you sure you want to unshare this folder?</p>
+                        <button id="cancel-btn" type="button" onclick="cancelModal()">Cancel</button>
+                        <button id="unshare-btn" type="submit">Unshare</button>
+                    </form>
+                </div>
+            </div>`;
+
+            const folderContent = document.getElementById('folder-contents');
+            folderContent.insertAdjacentHTML('beforeend', unshareForm);
             closeMenu('folder', folderId);
         }
 
@@ -310,12 +355,13 @@
     <main>
         <%- include('partials/sidebar', {folderTree, sharedFolders}) %>
         <div id="folder-contents">
+            <div id="path-nav">
             <% if( locals.sharedInfo && locals.sharedInfo.permission !== "OWNER" ) { %>
                 <div class="util-bar" id="shared-info">
                     <p>This folder is shared with you by <strong><%= sharedInfo.sharedBy %></strong> with <strong><%= sharedInfo.permission %></strong> permission.</p>
                 </div>
+                <img id="unlink-icon" src="/assets/images/unlink-icon.svg" alt="unlink icon" onclick="unshareFolder('<%= folder.id %>')">
             <% } else { %>
-                <div id="path-nav">
                     <svg id='back' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onclick="goBack('<%= pathParts.length <= 2 ? pathParts[0].id : pathParts.slice().reverse()[1].id %>')"><title>Back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
                     <div class="util-bar" id="path">
                         <% pathParts.forEach((element, index) => { %>
@@ -326,10 +372,10 @@
                         <% }); %>
                     </div>
                     <% if((locals.sharedInfo && locals.sharedInfo.permission === "OWNER")) { %>
-                        <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= folder.parent_folder_id %>', '<%= JSON.stringify(sharedWith) %>')">
+                        <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= JSON.stringify(sharedWith) %>')">
                     <% } %>
-                </div>
             <% } %>
+            </div>
             <div id="contents">
                 <% if (!folder.other_folders?.length && !folder.files?.length) { %>
                     <p id="empty-message">This folder is empty.</p>

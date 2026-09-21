@@ -277,6 +277,15 @@ hr {
   z-index: 9999;
 }
 
+.modal-content {
+  background-color: white;
+  padding: 40px 20px;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 400px;
+}
+
 .folder-form {
   background-color: white;
   padding: 40px 20px;
@@ -373,16 +382,17 @@ hr {
 
 #share-modal-content {
   background-color: white;
-  padding: 40px 100px;
+  padding: 40px 40px;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   align-items: center;
   width: 60%;
   height: 60%;
 }
 
 #share-form {
-  width: 40%;
+  width: 100%;
+  margin-top: 50px;
 }
 
 #shared-list {
@@ -447,9 +457,43 @@ hr {
   height: 30px;
 }
 
+#shared-list ul {
+  background-color: var(--hover);
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  border-radius: 10px;
+}
+
 .divider {
   width: 1px;
   height: 100%;
   background-color: #ccc;
   margin: 0 16px;
+}
+
+#unlink-icon {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+#share-form-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  width: 40%;
+  height: 100%;
+}
+
+#unshare-form #cancel-btn {
+  font-size: 1rem;
+  padding: 0 5px;
+
+}
+
+#unshare-form #unshare-btn {
+  width: 100px;
+  padding: 0 5px;
 }

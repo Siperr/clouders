@@ -46,3 +46,7 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+#sidebar .toggle {
+  font-size: 10px;
+}
