@@ -7,14 +7,12 @@
     <link rel="stylesheet" href="/styles/folder.css">
     <link rel="stylesheet" href="/styles/sidebar.css">
     <script defer>
-        function addFile() {
-            const currFolder = window.location.pathname.split("/")[2] || "";
-            window.location.href = `/folder/${currFolder}/upload`;
+        function addFile(folderId) {
+            window.location.href = `/folder/${folderId}/upload`;
         }
 
-        function addFolder() {
-            const currFolder = window.location.pathname.split("/")[2] || "";
-            window.location.href = `/folder/${currFolder}/new-folder`;
+        function addFolder(folderId) {
+            window.location.href = `/folder/${folderId}/new-folder`;
         }
 
         async function deleteFolder(folderId) {
@@ -397,8 +395,8 @@
                     <h3>New</h3>
                     <hr>
                     <ul>
-                        <li id='add-file' onClick="addFile()">File</li>
-                        <li id='add-folder' onClick="addFolder()">Folder</li>
+                        <li id='add-file' onClick="addFile('<%= folder.id %>')">File</li>
+                        <li id='add-folder' onClick="addFolder('<%= folder.id %>')">Folder</li>
                     </ul>
                 </div>
             <% } %>

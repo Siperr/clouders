@@ -94,89 +94,110 @@ folderRouter.post("/", verifyAuth, async (req, res) => {
   }
 });
 
-folderRouter.get("/:id/new-folder", verifyAuth, async (req, res) => {
+folderRouter.get("/:id/new-folder", verifyAuth, checkPermission, async (req, res) => {
+  console.log("get new folder, req.permission: ", req.permission);
+  if (!req.permission) {
+    return res.status(403).render("error", {
+      message:
+        "You are not allowed to create a new folder in this shared folder",
+      back: `/folder/${req.params.id}`,
+    });
+  }
   res.render("newFolder", {
-    folder: (await getFolder(req.user.id, req.params.id)) || null,
+    folder: (await getFolder(req.user.id, req.params.id, req.permission !== null)) || null,
   });
 });
 
-folderRouter.post("/:id/new-folder", verifyAuth, async (req, res) => {
-  let folderName = req.body["folder-name"] || null;
-  const parentId = Number(req.params.id);
-  const userId = Number(req.user.id);
-
-  console.log("new-folder folder name: ", folderName);
-
-  try {
-    // trova le cartelle create di default e assegna il numero giusto al duplicato
-    const defaultNamedFolders = await prisma.folders.findMany({
-      where: {
-        parent_folder_id: parentId,
-        owner_id: userId,
-        name: {
-          startsWith: "New folder",
-        },
-      },
-      orderBy: {
-        name: "desc",
-      },
-      select: {
-        name: true,
-      },
-    });
-
-    console.log("new folder, default folders: ", defaultNamedFolders);
-
-    let newNumber = -1;
-
-    if (defaultNamedFolders.length > 0) {
-      const lastDefault = defaultNamedFolders[0].name;
-      console.log("lastDefault: ", lastDefault);
-      console.log("lastDefault split: ", lastDefault.split(" "));
-      newNumber =
-        lastDefault.split(" ").length > 2 ? lastDefault.split(" ")[2] : 0;
+folderRouter.post(
+  "/:id/new-folder",
+  verifyAuth,
+  checkPermission,
+  async (req, res) => {
+    if (req.permission && req.permission === Permission.READ) {
+      return res.status(403).render("error", {
+        message:
+          "You are not allowed to create a new folder in this shared folder",
+        back: `/folder/${req.params.id}`,
+      });
     }
 
-    console.log("new number: ", newNumber);
+    let folderName = req.body["folder-name"] || null;
+    const parentId = Number(req.params.id);
+    const userId = Number(req.user.id);
 
-    // console.log("new-folder sortedNumbers: ", sortedNumbers);
+    console.log("new-folder folder name: ", folderName);
 
-    const folder = await prisma.$transaction(async (tx) => {
-      const parentFolder = await tx.folders.findFirst({
+    try {
+      // trova le cartelle create di default e assegna il numero giusto al duplicato
+      const defaultNamedFolders = await prisma.folders.findMany({
         where: {
-          id: parentId,
+          parent_folder_id: parentId,
           owner_id: userId,
+          name: {
+            startsWith: "New folder",
+          },
+        },
+        orderBy: {
+          name: "desc",
         },
         select: {
-          id: true,
+          name: true,
         },
       });
 
-      if (!parentFolder) {
-        throw new Error("Folder not found or authorized.");
+      console.log("new folder, default folders: ", defaultNamedFolders);
+
+      let newNumber = -1;
+
+      if (defaultNamedFolders.length > 0) {
+        const lastDefault = defaultNamedFolders[0].name;
+        console.log("lastDefault: ", lastDefault);
+        console.log("lastDefault split: ", lastDefault.split(" "));
+        newNumber =
+          lastDefault.split(" ").length > 2 ? lastDefault.split(" ")[2] : 0;
       }
 
-      return tx.folders.create({
-        data: {
-          name:
-            folderName ??
-            (newNumber >= 0
-              ? `New folder ${Number(newNumber) + 1}`
-              : "New folder"),
-          owner_id: userId,
-          parent_folder_id: parentFolder.id,
-        },
-      });
-    });
+      console.log("new number: ", newNumber);
 
-    res.redirect(`/folder/${parentId}`);
-  } catch (err) {
-    console.log("New folder error: ", err);
-    res
-      .status(400)
-      .render("error", { message: err, back: `/folder/${parentId}` });
-  }
-});
+      // console.log("new-folder sortedNumbers: ", sortedNumbers);
+
+      const folder = await prisma.$transaction(async (tx) => {
+        const parentFolder = await tx.folders.findFirst({
+          where: {
+            id: parentId,
+            owner_id: userId,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!parentFolder) {
+          throw new Error("Folder not found or authorized.");
+        }
+
+        return tx.folders.create({
+          data: {
+            name:
+              folderName ??
+              (newNumber >= 0
+                ? `New folder ${Number(newNumber) + 1}`
+                : "New folder"),
+            owner_id: userId,
+            parent_folder_id: parentFolder.id,
+          },
+        });
+      });
+
+      res.redirect(`/folder/${parentId}`);
+    } catch (err) {
+      console.log("New folder error: ", err);
+      res
+        .status(400)
+        .render("error", { message: err, back: `/folder/${parentId}` });
+    }
+  },
+);
 
 folderRouter.get(
   "/:id/upload",
@@ -266,7 +287,7 @@ folderRouter.post(
   validateRenameFolder,
   checkPermission,
   async (req, res) => {
-    if (req.permission && req.permission !== Permission.OWNER) {
+    if (req.permission && req.permission === Permission.READ) {
       return res.status(403).render("error", {
         message: "You are not allowed to rename this shared folder",
         back: `/folder`,
