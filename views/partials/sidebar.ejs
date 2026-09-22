@@ -24,7 +24,6 @@
         <h3><a href="/folder/shared-with-you">Shared with you</a></h3>
         <ul id="shared-folders">
             <% if (locals.sharedFolders && sharedFolders.length > 0) { %>
-                <% console.log('sidebar, sharedFolders: ', sharedFolders) %>
                 <% sharedFolders.forEach(sf => { %>
                     <li class="tree-node">
                         <a href="/folder/<%= sf.folder_id %>"><%= sf.folders.name %></a>
