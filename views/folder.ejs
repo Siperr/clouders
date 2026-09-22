@@ -324,24 +324,48 @@
         const addBtn = document.getElementById("add-btn");
         const menu = document.getElementById("add-menu");
         const menuOffset = 200;
+        const infoOffset = -30;
 
-        addBtn.addEventListener("click", (e) => {
+        if(addBtn && menu) {
+            addBtn.addEventListener("click", (e) => {
+                e.stopPropagation(); // opzionale, vedi sotto
+
+                menu.hidden = !menu.hidden;
+
+                if (menu.hidden) return;
+
+                const rect = addBtn.getBoundingClientRect();
+
+                menu.style.position = "fixed";
+                menu.style.left = `${rect.left - menu.offsetWidth - 10}px`;
+                menu.style.top = `${rect.bottom - menuOffset}px`;
+            });
+        }
+
+        const infoBtn = document.getElementById("info-icon");
+        const sharedInfo = document.getElementById("shared-info");
+
+        infoBtn.addEventListener("click", (e) => {
             e.stopPropagation(); // opzionale, vedi sotto
 
-            menu.hidden = !menu.hidden;
+            sharedInfo.hidden = !sharedInfo.hidden;
 
-            if (menu.hidden) return;
+            if (sharedInfo.hidden) return;
 
-            const rect = addBtn.getBoundingClientRect();
+            const rect = infoBtn.getBoundingClientRect();
 
-            menu.style.position = "fixed";
-            menu.style.left = `${rect.left - menu.offsetWidth - 10}px`;
-            menu.style.top = `${rect.bottom - menuOffset}px`;
+            sharedInfo.style.position = "fixed";
+            sharedInfo.style.left = `${rect.left - sharedInfo.offsetWidth - 10}px`;
+            sharedInfo.style.top = `${rect.bottom - infoOffset}px`;
         });
 
         document.addEventListener("click", (e) => {
             if (!menu.contains(e.target) && !addBtn.contains(e.target)) {
-            menu.hidden = true;
+                menu.hidden = true;
+            }
+
+            if( !sharedInfo.contains(e.target) && !infoBtn.contains(e.target)) {
+                sharedInfo.hidden = true;
             }
         });
         });
@@ -354,25 +378,27 @@
         <%- include('partials/sidebar', {folderTree, sharedFolders}) %>
         <div id="folder-contents">
             <div id="path-nav">
-            <% if( locals.sharedInfo && locals.sharedInfo.permission !== "OWNER" ) { %>
-                <div class="util-bar" id="shared-info">
-                    <p>This folder is shared with you by <strong><%= sharedInfo.sharedBy %></strong> with <strong><%= sharedInfo.permission %></strong> permission.</p>
+                <svg id='back' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onclick="goBack('<%= pathParts.length <= 2 ? pathParts[0].id : pathParts.slice().reverse()[1].id %>')"><title>Back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+                <div class="util-bar" id="path">
+                    <% pathParts.forEach((element, index) => { %>
+                        <p><a href="/folder/<%= element.id %>">
+                            <%= element.name %>
+                        </a></p>
+                        <span>></span>
+                    <% }); %>
                 </div>
-                <img id="unlink-icon" src="/assets/images/unlink-icon.svg" alt="unlink icon" onclick="unshareFolder('<%= folder.id %>')">
-            <% } else { %>
-                    <svg id='back' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onclick="goBack('<%= pathParts.length <= 2 ? pathParts[0].id : pathParts.slice().reverse()[1].id %>')"><title>Back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
-                    <div class="util-bar" id="path">
-                        <% pathParts.forEach((element, index) => { %>
-                            <p><a href="/folder/<%= element.id %>">
-                                <%= element.name %>
-                            </a></p>
-                            <span>></span>
-                        <% }); %>
+                <% if((locals.sharedInfo && locals.sharedInfo.permission === "OWNER")) { %>
+                    <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= JSON.stringify(sharedWith) %>')">
+                <% } %>
+
+                <% if( locals.sharedInfo && locals.sharedInfo.permission !== "OWNER" ) { %>
+                    <img id="info-icon" src="/assets/images/info-icon.svg" alt="info icon">
+                    <img id="unlink-icon" src="/assets/images/unlink-icon.svg" alt="unlink icon" onclick="unshareFolder('<%= folder.id %>')">
+                    <div id="shared-info" hidden>
+                        <p>This folder is shared with you by <strong><%= sharedInfo.sharedBy %></strong> with <strong><%= sharedInfo.permission %></strong> permission.</p>
                     </div>
-                    <% if((locals.sharedInfo && locals.sharedInfo.permission === "OWNER")) { %>
-                        <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= JSON.stringify(sharedWith) %>')">
-                    <% } %>
-            <% } %>
+                <% } %>
+                
             </div>
             <div id="contents">
                 <% if (!folder.other_folders?.length && !folder.files?.length) { %>
