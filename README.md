@@ -95,15 +95,12 @@ The application follows a modular architecture where routing, authentication, da
 
 ### Login
 
-![Login](assets/login.png)
+![Login](/public/assets/login.png)
 
-### Dashboard
-
-![Dashboard](assets/dashboard.png)
 
 ### Upload
 
-![Upload](assets/upload.png)
+![Upload](/public/assets/upload.png)
 
 ### Folder View
 
