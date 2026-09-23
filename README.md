@@ -104,7 +104,7 @@ The application follows a modular architecture where routing, authentication, da
 
 ### Folder View
 
-![Folder](assets/folder.png)
+![Folder](/public/assets/folder.png)
 
 ---
 
