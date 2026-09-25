@@ -4,8 +4,8 @@ const { verifyAuth, checkPermission } = require("../middlewares/auth");
 const fs = require("fs");
 const { validateRenameFile } = require("../middlewares/formValidation");
 const { validationResult } = require("express-validator");
+const path = require("path");
 
-// TODO: CRUD file e download
 fileRouter.get("/:id", verifyAuth, checkPermission, async (req, res) => {
   if(!req.permission) {
     return res.status(403).render("error", {
@@ -18,16 +18,11 @@ fileRouter.get("/:id", verifyAuth, checkPermission, async (req, res) => {
     const file = await prisma.files.findUnique({
       where: {
         id: Number(req.params.id),
-        owner_id: req.user.id,
       },
     });
 
-    console.log(`${req.user.username} requested file: ${file.name}`);
-    console.log("file path: ", file.path);
-    console.log("file mime_type: ", file.mime_type);
-
     res.sendFile(
-      file.path,
+      path.join(__dirname, "../tmp/uploads", file.path),
       {
         headers: {
           "Content-Disposition": "inline",
@@ -66,7 +61,6 @@ fileRouter.delete(
     try {
       const fileId = Number(req.params.id);
 
-      // controllo che il file esista e appartenga all'utente
       const file = await prisma.files.findFirst({
         where: {
           id: fileId,
@@ -80,21 +74,21 @@ fileRouter.delete(
           back: `/folder`,
         });
       }
+      
+      fs.unlink(path.join(__dirname, "../tmp/uploads", file.path), (err) => {
+        if (err) {
+          console.error("Error deleting file from filesystem:", err);
+          throw new Error("Error deleting file from filesystem:" + err);
+        }
+      });
 
-      // elimina il record dal database
-      await prisma.files.delete({
+      const deletedFile = await prisma.files.delete({
         where: {
           id: file.id,
         },
       });
+      
 
-      fs.unlink(file.path, (err) => {
-        if (err) {
-          console.error("Error deleting file from filesystem:", err);
-        }
-      });
-
-      console.log(`${req.user.username} deleted the '${file.name}' file`);
       res.redirect(200, `/folder/${file.folder_id}`);
     } catch (err) {
       console.log("delete file error:", err);
@@ -124,7 +118,6 @@ fileRouter.get(
       const file = await prisma.files.findFirst({
         where: {
           id: fileId,
-          owner_id: req.user.id,
         },
       });
 
@@ -132,7 +125,7 @@ fileRouter.get(
         return res.status(404).send("File not found");
       }
 
-      res.download(file.path, file.name);
+      res.download(path.join(__dirname, "../tmp/uploads", file.path), file.name);
     } catch (err) {
       console.log("download file error:", err);
 
@@ -187,7 +180,6 @@ fileRouter.post(
         });
       }
 
-      console.log(`${req.user.username} renamed the file to '${file.name}'`);
       res.redirect(`/folder/${parentId}`);
     } catch (err) {
       console.log("rename file error:", err);
@@ -225,9 +217,6 @@ fileRouter.post("/:id/move", verifyAuth, checkPermission, async (req, res) => {
       });
     }
 
-    console.log(
-      `${req.user.username} moved the file '${file.name}' to folder ID ${newFolderId}`,
-    );
     res.redirect(`/folder/${newFolderId}`);
   } catch (err) {
     console.log("move file error:", err);

@@ -287,7 +287,6 @@ hr {
 }
 
 .folder-form {
-  background-color: white;
   padding: 40px 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -408,6 +407,7 @@ hr {
 
 #shared-list ul {
   list-style-type: none;
+  padding: 5px 20px;
 }
 
 #shared-list li {
@@ -513,4 +513,8 @@ hr {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
   z-index: 9999;
   width: 200px;
+}
+
+#shared-info form {
+  background-color: var(--hover);
 }

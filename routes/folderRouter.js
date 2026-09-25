@@ -1,5 +1,6 @@
 const { prisma, Permission } = require("../config/prisma");
 const { verifyAuth, checkPermission } = require("../middlewares/auth");
+const fs = require("fs");
 const folderRouter = require("express").Router();
 const {
   validateRenameFolder,
@@ -35,7 +36,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 folderRouter.get("/all", verifyAuth, async (req, res) => {
-  console.log("get all");
   const exclude = req.query.exclude
     ? req.query.exclude.split(",").map(Number)
     : [];
@@ -55,7 +55,6 @@ folderRouter.get("/all", verifyAuth, async (req, res) => {
     });
 
     const tree = createFolderTree(folders);
-    console.log(tree);
     res.json(tree);
   } catch (err) {
     console.log("get all folders error ", err);
@@ -95,7 +94,6 @@ folderRouter.post("/", verifyAuth, async (req, res) => {
 });
 
 folderRouter.get("/:id/new-folder", verifyAuth, checkPermission, async (req, res) => {
-  console.log("get new folder, req.permission: ", req.permission);
   if (!req.permission) {
     return res.status(403).render("error", {
       message:
@@ -125,10 +123,7 @@ folderRouter.post(
     const parentId = Number(req.params.id);
     const userId = Number(req.user.id);
 
-    console.log("new-folder folder name: ", folderName);
-
     try {
-      // trova le cartelle create di default e assegna il numero giusto al duplicato
       const defaultNamedFolders = await prisma.folders.findMany({
         where: {
           parent_folder_id: parentId,
@@ -145,21 +140,13 @@ folderRouter.post(
         },
       });
 
-      console.log("new folder, default folders: ", defaultNamedFolders);
-
       let newNumber = -1;
 
       if (defaultNamedFolders.length > 0) {
         const lastDefault = defaultNamedFolders[0].name;
-        console.log("lastDefault: ", lastDefault);
-        console.log("lastDefault split: ", lastDefault.split(" "));
         newNumber =
           lastDefault.split(" ").length > 2 ? lastDefault.split(" ")[2] : 0;
       }
-
-      console.log("new number: ", newNumber);
-
-      // console.log("new-folder sortedNumbers: ", sortedNumbers);
 
       const folder = await prisma.$transaction(async (tx) => {
         const parentFolder = await tx.folders.findFirst({
@@ -267,11 +254,16 @@ folderRouter.post(
           name: req.file.originalname,
           size: req.file.size,
           mime_type: req.file.mimetype,
-          path: req.file.path,
+          path: req.file.filename,
           owner_id: req.user.id,
           folder_id: folderId,
         },
       });
+
+      if(!newFile) {
+        fs.unlinkSync(require("path").join(__dirname, "../tmp/uploads", req.file.path));
+        throw new Error("Could not create file entry");
+      }
 
       res.redirect(`/folder/${folderId}`);
     } catch (err) {
@@ -322,9 +314,6 @@ folderRouter.post(
         });
       }
 
-      console.log(
-        `${req.user.username} renamed the folder to '${folder.name}'`,
-      );
       res.redirect(`/folder/${parentId}`);
     } catch (err) {
       console.log("rename folder error ", err);
@@ -368,40 +357,12 @@ folderRouter.post("/:id/move", verifyAuth, async (req, res) => {
   }
 });
 
-// folderRouter.get(
-//   "/:id/shared",
-//   verifyAuth,
-//   checkPermission,
-//   async (req, res, next) => {
-//     try {
-//       console.log(`req.permission: ${req.permission}`);
-//       if(!req.permission) {
-//         return res.status(403).render("error", {
-//           message: "You are not allowed to view this folder",
-//           back: `/folder`,
-//         });
-//       }
-
-//     } catch (err) {
-//       console.log("share folder error: ", err);
-//       return res.status(500).render("error", {
-//         message: "could not share folder",
-//         back: `/folder`,
-//       });
-//     }
-
-//     next();
-//   }, showFolder
-// );
-
 folderRouter.post(
   "/:id/share",
   verifyAuth,
   checkPermission,
   validateShareFolder,
   async (req, res) => {
-    console.log("share folder, req.body: ", req.body);
-
     if (req.permission && req.permission !== Permission.OWNER) {
       return res.status(403).render("error", {
         message: "You are not allowed to operate on this shared folder",
@@ -412,7 +373,7 @@ folderRouter.post(
     try {
       if (req.body.permission_update) {
         const perms =
-          req.body.permission.toString().toUpperCase() === "READ"
+          req.body.permission_update.toUpperCase() === "READ"
             ? Permission.READ
             : Permission.WRITE;
 
@@ -465,8 +426,6 @@ folderRouter.post(
           back: `/folder`,
         });
       }
-
-      //check if the folder has already registered the owner
 
       const existingOwner = await prisma.shared_folders.findFirst({
         where: {
@@ -624,7 +583,6 @@ folderRouter.delete(
         },
       });
 
-      console.log(`${req.user.username} deleted the '${folder.name}' folder`);
       res.redirect(200, `/folder/${folder.parent_folder_id}`);
     } catch (err) {
       console.log("delete folder error ", err);

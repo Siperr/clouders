@@ -2,10 +2,18 @@
 
 A lightweight Google Drive-inspired web application built with **Express**, **EJS**, and **Prisma**. Clouders allows authenticated users to upload, organize, and manage files through a server-rendered interface with permission-based access control.
 
-🚀 **Live Demo:** https://..
-
 > This project was built as a full-stack exercise to explore authentication, authorization, file management, relational database modeling, and MVC application architecture.
 
+
+## 🚀 Live Demo
+
+https://clouders-uset.onrender.com
+
+### Demo Account
+
+username: `faffi`
+
+Password: `faffi`
 
 ---
 
@@ -90,8 +98,6 @@ The application follows a modular architecture where routing, authentication, da
 ---
 
 ## Screenshots
-
-> Add screenshots here.
 
 ### Login
 

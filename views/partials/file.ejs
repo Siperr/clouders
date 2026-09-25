@@ -1,15 +1,19 @@
 <div class="file" id="file-<%= file.id %>">
     <div class="icon-menu">
         <img class="file-icon" src="/assets/images/file-icon.svg" onclick="openFile('<%= file.id %>')">
-        <svg onclick="showMenu('file', '<%= file.id %>')" class='menu-btn' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z" /></svg>
+        <% if(locals.sharedInfo.permission && locals.sharedInfo.permission !== 'READ') { %>
+            <svg onclick="showMenu('file', '<%= file.id %>')" class='menu-btn' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16,12A2,2 0 0,1 18,10A2,2 0 0,1 20,12A2,2 0 0,1 18,14A2,2 0 0,1 16,12M10,12A2,2 0 0,1 12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12M4,12A2,2 0 0,1 6,10A2,2 0 0,1 8,12A2,2 0 0,1 6,14A2,2 0 0,1 4,12Z" /></svg>
+        <% } %>
     </div>
-    <div class="menu" hidden>
-        <svg class='close-btn' onclick="closeMenu('file', '<%= file.id %>')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
-        <ul>
-            <li onClick="deleteFile('<%= file.id %>')">Delete</li>
-            <li onClick="renameFile('<%= file.id %>', '<%= locals.folder.id %>')">Rename</li>
-            <li onClick="moveFile('<%= file.name %>', '<%= file.id %>', '<%= locals.folder.name %>','<%= locals.folder.id %>', '<%= JSON.stringify(locals.folderTree) %>')">Move</li>
-        </ul>
-    </div>
+        <div class="menu" hidden>
+            <svg class='close-btn' onclick="closeMenu('file', '<%= file.id %>')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+            <ul>
+                <li onClick="renameFile('<%= file.id %>', '<%= locals.folder.id %>')">Rename</li>
+                <% if(locals.sharedInfo.permission && locals.sharedInfo.permission === 'OWNER') { %>
+                    <li onClick="moveFile('<%= file.name %>', '<%= file.id %>', '<%= locals.folder.name %>','<%= locals.folder.id %>', '<%= JSON.stringify(locals.folderTree) %>')">Move</li>
+                    <li onClick="deleteFile('<%= file.id %>')">Delete</li>
+                <% } %>
+            </ul>
+        </div>
     <p class="file-name"><%= file.name %></p>
 </div>

@@ -11,9 +11,6 @@ signupRouter.get("/", (req, res) => {
 
 signupRouter.post("/", validateSignupForm, async (req, res) => {
   try {
-    console.log(req.body);
-    console.log(typeof req.body);
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).render("signup", { error: errors.array()[0].msg});
@@ -21,16 +18,14 @@ signupRouter.post("/", validateSignupForm, async (req, res) => {
 
     const { username, password } = req.body;
 
-    console.log("signup post: username - ", username, "password", password);
     const user = await prisma.users.findUnique({
       where: { username },
     });
 
     if (user) {
-      console.log("Signup post error: Username already exists");
       return res
         .status(400)
-        .render("signup", { error: "Username already exists"});
+        .render("signup", { error: "Username already exists" });
     }
 
     const hashedPw = bcrypt.hashSync(password, 10);
@@ -42,17 +37,12 @@ signupRouter.post("/", validateSignupForm, async (req, res) => {
       },
     });
 
-    if (createdUser) console.log("sign up post: user created: ", createdUser);
-
-    //creo la cartella principale dello user
     const folder = await prisma.folders.create({
       data: {
         name: createdUser.username,
         owner_id: createdUser.id,
       },
     });
-
-    console.log("sign up post: folder created: ", folder);
 
     return res.redirect(`/folder/${folder.id}`);
   } catch (err) {

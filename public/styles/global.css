@@ -64,6 +64,9 @@ h6 {
   font-family: var(--font-h);
   /* font-size: var(--font-size-h); */
   color: var(--color-h);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 * {

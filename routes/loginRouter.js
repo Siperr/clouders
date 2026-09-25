@@ -7,18 +7,11 @@ loginRouter.get("/", (req, res) => {
       ? req.session.messages.pop()
       : null;
 
-  console.log('Login get errors: ', error);
-
   res.render("login", {error});
 });
 
 loginRouter.post(
   "/",
-  (req, res, next) => {
-    console.log("login post");
-    console.log(req.body);
-    next();
-  },
   passport.authenticate("local", {
     successRedirect: `/folder`,
     failureRedirect: "/login",

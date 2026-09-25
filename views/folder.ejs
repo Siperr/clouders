@@ -20,13 +20,9 @@
 
             const url = `/folder/${Number(folderId)}/delete`;
 
-            console.log("delete folder url: ", url);
-
             const response = await fetch(url, {
                 method: "DELETE",
             });
-
-            console.log("delete folder response: ", response);
 
             if (response.ok) {
                 window.location.reload();
@@ -42,13 +38,9 @@
 
             const url = `/file/${Number(fileId)}/delete`;
 
-            console.log("delete file url: ", url);
-
             const response = await fetch(url, {
                 method: "DELETE",
             });
-
-            console.log("delete file response: ", response);
 
             if (response.ok) {
                 window.location.reload();
@@ -96,7 +88,6 @@
         }
 
         function goBack(folderId) {
-            console.log("goBack, folderId: ", folderId);
             const newPath = `/folder/${folderId}`;
             window.location.href = newPath;
         }
@@ -136,11 +127,8 @@
         }
 
         async function moveFolder(folderName, folderId, parentName, parentId) {
-            console.log("moveFolder, folderid: ", folderId, "parentId: ", parentId);
             const folders = await fetch('/folder/all');
-            console.log("folders: ", folders);
             const foldersTree = await folders.json();
-            console.log("foldersTree: ", foldersTree);
 
             function createOptions(node, level = 0){
                 let result = [];
@@ -159,9 +147,6 @@
             }
 
             let options = createOptions(foldersTree);
-
-
-            console.log('options: ', options);
 
             const moveForm = `<div class="modal-container">
                 <div id="move-form-content">
@@ -206,8 +191,6 @@
             }
 
             let options = createOptions(foldersTree);
-
-            // console.log('options: ', options);
 
             const moveForm = `<div class="modal-container">
                 <div id="move-form-content">
