@@ -15,16 +15,10 @@ passport.use(
           where: { username },
         });
 
-        console.log("passport strategy: username", username);
-        console.log("passport strategy: password", password);
-
         if (!user) {
           console.log("passport strategy: Incorrect username.");
           return done(null, false, { message: "Incorrect username." });
         }
-
-        console.log("password to compare: ", password);
-        console.log("saved password hash: ", user.password);
 
         if (!bcrypt.compareSync(password, user.password)) {
           console.log("passport strategy: Incorrect password.");

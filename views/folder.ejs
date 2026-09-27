@@ -254,6 +254,7 @@
                             <button id="share-btn" type="submit">Share</button>
                         </form>
                     </div>
+                    <svg id="close-btn" xmlns="http://www.w3.org/2000/svg" onclick="cancelModal()" viewBox="0 0 24 24"><title>close</title><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
                 </div>
             </div>`;
 
@@ -304,53 +305,55 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-        const addBtn = document.getElementById("add-btn");
-        const menu = document.getElementById("add-menu");
-        const menuOffset = 200;
-        const infoOffset = -30;
+            const addBtn = document.getElementById("add-btn");
+            const menu = document.getElementById("add-menu");
+            const menuOffset = 200;
+            const infoOffset = -30;
 
-        if(addBtn && menu) {
-            addBtn.addEventListener("click", (e) => {
-                e.stopPropagation(); // opzionale, vedi sotto
+            if(addBtn && menu) {
+                addBtn.addEventListener("click", (e) => {
+                    e.stopPropagation(); 
 
-                menu.hidden = !menu.hidden;
+                    menu.hidden = !menu.hidden;
 
-                if (menu.hidden) return;
+                    if (menu.hidden) return;
 
-                const rect = addBtn.getBoundingClientRect();
+                    const rect = addBtn.getBoundingClientRect();
 
-                menu.style.position = "fixed";
-                menu.style.left = `${rect.left - menu.offsetWidth - 10}px`;
-                menu.style.top = `${rect.bottom - menuOffset}px`;
+                    menu.style.position = "fixed";
+                    menu.style.left = `${rect.left - menu.offsetWidth - 10}px`;
+                    menu.style.top = `${rect.bottom - menuOffset}px`;
+                });
+            }
+
+            const infoBtn = document.getElementById("info-icon");
+            const sharedInfo = document.getElementById("shared-info");
+
+            if(infoBtn && sharedInfo) {
+                infoBtn.addEventListener("click", (e) => {
+                    e.stopPropagation(); 
+
+                    sharedInfo.hidden = !sharedInfo.hidden;
+
+                    if (sharedInfo.hidden) return;
+
+                    const rect = infoBtn.getBoundingClientRect();
+
+                    sharedInfo.style.position = "fixed";
+                    sharedInfo.style.left = `${rect.left - sharedInfo.offsetWidth - 10}px`;
+                    sharedInfo.style.top = `${rect.bottom - infoOffset}px`;
+                });
+            }
+
+            document.addEventListener("click", (e) => {
+                if (menu &&!menu.contains(e.target)) {
+                    menu.hidden = true;
+                }
+
+                if(sharedInfo && !sharedInfo.contains(e.target)) {
+                    sharedInfo.hidden = true;
+                }
             });
-        }
-
-        const infoBtn = document.getElementById("info-icon");
-        const sharedInfo = document.getElementById("shared-info");
-
-        infoBtn.addEventListener("click", (e) => {
-            e.stopPropagation(); // opzionale, vedi sotto
-
-            sharedInfo.hidden = !sharedInfo.hidden;
-
-            if (sharedInfo.hidden) return;
-
-            const rect = infoBtn.getBoundingClientRect();
-
-            sharedInfo.style.position = "fixed";
-            sharedInfo.style.left = `${rect.left - sharedInfo.offsetWidth - 10}px`;
-            sharedInfo.style.top = `${rect.bottom - infoOffset}px`;
-        });
-
-        document.addEventListener("click", (e) => {
-            if (!menu.contains(e.target) && !addBtn.contains(e.target)) {
-                menu.hidden = true;
-            }
-
-            if( !sharedInfo.contains(e.target) && !infoBtn.contains(e.target)) {
-                sharedInfo.hidden = true;
-            }
-        });
         });
     </script>
     <title><%= title %></title>
@@ -370,11 +373,10 @@
                         <span>></span>
                     <% }); %>
                 </div>
-                <% if((locals.sharedInfo && locals.sharedInfo.permission === "OWNER")) { %>
+                <% if(locals.sharedInfo.permission && locals.sharedInfo.permission === "OWNER") { %>
                     <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= JSON.stringify(sharedWith) %>')">
                 <% } %>
-
-                <% if( locals.sharedInfo && locals.sharedInfo.permission !== "OWNER" ) { %>
+                <% if( locals.sharedInfo.permission && locals.sharedInfo.permission !== "OWNER") { %>
                     <img id="info-icon" src="/assets/images/info-icon.svg" alt="info icon">
                     <img id="unlink-icon" src="/assets/images/unlink-icon.svg" alt="unlink icon" onclick="unshareFolder('<%= folder.id %>')">
                     <div id="shared-info" hidden>
@@ -398,7 +400,7 @@
 
                 <% } %>
             </div>
-            <% if(!locals.sharedInfo || locals.sharedInfo.permission !== "READ") { %>
+            <% if(locals.sharedInfo.permission && locals.sharedInfo.permission !== "READ") { %>
                 <button id="add-btn"><img src="/assets/images/add.svg"></button>
                 <div id="add-menu" hidden>
                     <h3>New</h3>
