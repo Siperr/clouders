@@ -14,7 +14,7 @@ Clouders allows authenticated users to upload, organize, preview, share and mana
 https://clouders-uset.onrender.com
 
 > [!NOTE]
->The application is deployed on Render's free tier. > If the service has been idle, the first request may > take around a minute while the server wakes up.
+>The application is deployed on Render's free tier. If the service has been idle, the first request may take around a minute while the server wakes up.
 
 ### Demo Account
 
@@ -78,17 +78,19 @@ Password: `faffi`
 
 ## Access Control
 
->[!NOTE]
->Folder ownership, permissions, and inheritance are enforced entirely on the server, preventing unauthorized access even when requests are manually crafted.
-
 Clouders implements a permission-based authorization system for shared folders.
+
+> [!IMPORTANT]
+> Folder ownership, permissions, and inheritance are enforced entirely on the server, preventing unauthorized access even when requests are manually crafted.
 
 Users can share folders with other registered users and assign different access levels:
 
-- **Read**: allows users to view folder contents and preview or download files
-- **Write**: allows users to modify folder contents
+- **Read**: allows users to browse folder contents and preview or download files.
+- **Write**: allows users to upload files, create subfolders and rename existing resources.
 
-Permissions are inherited through the folder hierarchy, allowing access rules to be applied consistently across nested folders.
+To prevent accidental or unauthorized data loss, **only the folder owner** can delete or move files and folders.
+
+Permissions are inherited throughout the folder hierarchy, ensuring consistent access control across nested folders.
 
 All permissions are validated server-side before performing protected operations.
 
