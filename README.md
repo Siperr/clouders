@@ -2,7 +2,7 @@
 
 A lightweight Google Drive-inspired file management platform built with **Express**, **EJS**, **Prisma**, and **PostgreSQL**.
 
-![Dashboard](assets/folder.png)
+![Dashboard](/public/assets/folder.png)
 
 Clouders allows authenticated users to upload, organize, preview, share and manage files through a server-rendered interface with permission-based access control. Uploaded files are stored in **Supabase Storage**, enabling persistent cloud storage and supporting files up to **100 MB**.
 
@@ -148,19 +148,19 @@ Unsupported file types can still be downloaded normally.
 
 ### Login
 
-![Login](assets/login.png)
+![Login](/public/assets/login.png)
 
 
 ### Upload
 
-![Upload](assets/upload.png)
+![Upload](/public/assets/upload.png)
 
 ### Folder
 
-![Folder](assets/folder.png)
+![Folder](/public/assets/folder.png)
 
 ### Preview
-![Preview](assets/preview.png)
+![Preview](/public/assets/preview.png)
 
 ---
 
