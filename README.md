@@ -1,6 +1,10 @@
 # ☁️ Clouders
 
-A lightweight Google Drive-inspired web application built with **Express**, **EJS**, and **Prisma**. Clouders allows authenticated users to upload, organize, and manage files through a server-rendered interface with permission-based access control.
+A lightweight Google Drive-inspired file management platform built with **Express**, **EJS**, **Prisma**, and **PostgreSQL**.
+
+![Dashboard](assets/folder.png)
+
+Clouders allows authenticated users to upload, organize, preview, share and manage files through a server-rendered interface with permission-based access control. Uploaded files are stored in **Supabase Storage**, enabling persistent cloud storage and supporting files up to **100 MB**.
 
 > This project was built as a full-stack exercise to explore authentication, authorization, file management, relational database modeling, and MVC application architecture.
 
@@ -8,6 +12,9 @@ A lightweight Google Drive-inspired web application built with **Express**, **EJ
 ## 🚀 Live Demo
 
 https://clouders-uset.onrender.com
+
+> [!NOTE]
+>The application is deployed on Render's free tier. > If the service has been idle, the first request may > take around a minute while the server wakes up.
 
 ### Demo Account
 
@@ -23,11 +30,14 @@ Password: `faffi`
 - 👤 Secure password hashing using bcrypt
 - 💾 Persistent user sessions
 - 📁 Create and organize folders
-- 🧭 File explorer-like navigation with breadcrumbs
+- 🧭 File explorer-like navigation with interactive breadcrumbs
 - 🌳 Collapsible folder tree sidebar for quick navigation
-- 📄 Upload, browser-supported preview and download of files
+- 📤 Upload files up to 100 MB
+- ☁️ Persistent object storage powered by Supabase Storage
+- 👀 In-browser preview for supported file types
+- 📥 File download support
 - 🤝 Share folders with other users
-- 🔑 Permission-based access control:
+- 🔑 Permission-based access control
   - Read permissions
   - Write permissions
   - Permission inheritance from parent folders
@@ -44,6 +54,7 @@ Password: `faffi`
 * Express.js
 * Prisma ORM
 * PostgreSQL
+* Supabase Storage
 
 ### Frontend
 
@@ -62,9 +73,13 @@ Password: `faffi`
 
 * Multer
 
+
 ---
 
 ## Access Control
+
+>[!NOTE]
+>Folder ownership, permissions, and inheritance are enforced entirely on the server, preventing unauthorized access even when requests are manually crafted.
 
 Clouders implements a permission-based authorization system for shared folders.
 
@@ -76,6 +91,22 @@ Users can share folders with other registered users and assign different access 
 Permissions are inherited through the folder hierarchy, allowing access rules to be applied consistently across nested folders.
 
 All permissions are validated server-side before performing protected operations.
+
+---
+
+## Architecture
+
+```text
+                Client
+                   │
+             Express + EJS
+                   │
+      ┌────────────┴────────────┐
+      │                         │
+   Prisma ORM          Supabase Storage
+      │                         │
+ PostgreSQL             Uploaded Files
+```
 
 ---
 
@@ -97,20 +128,39 @@ The application follows a modular architecture where routing, authentication, da
 
 ---
 
+## File Preview
+
+Clouders provides an integrated preview page for files supported by modern browsers.
+
+Currently supported preview types include:
+
+- 📝 Plain text
+- 🖼 Images
+- 🎵 Audio
+- 🎬 Video
+- 📄 PDF documents
+
+Unsupported file types can still be downloaded normally.
+
+---
+
 ## Screenshots
 
 ### Login
 
-![Login](/public/assets/login.png)
+![Login](assets/login.png)
 
 
 ### Upload
 
-![Upload](/public/assets/upload.png)
+![Upload](assets/upload.png)
 
-### Folder View
+### Folder
 
-![Folder](/public/assets/folder.png)
+![Folder](assets/folder.png)
+
+### Preview
+![Preview](assets/preview.png)
 
 ---
 
@@ -137,4 +187,6 @@ Building Clouders helped me improve my understanding of:
 * Building reusable Express middleware for authentication and validation
 * Structuring server-side rendered applications with EJS
 * Separating routing, business logic, database operations, and utilities into maintainable modules
+* Integrating cloud object storage with Supabase Storage
+* Separating file metadata from binary file storage
 
