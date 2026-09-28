@@ -36,6 +36,8 @@
         async function deleteFile(fileId) {
             if (!confirm("Are you sure to delete this file?")) return;
 
+            closeMenu('file', fileId);
+
             const url = `/file/${Number(fileId)}/delete`;
 
             const response = await fetch(url, {
@@ -45,10 +47,10 @@
             if (response.ok) {
                 window.location.reload();
             } else {
-                alert("Errore durante la cancellazione");
+                alert("Errore durante la cancellazione" );
+                console.log("Errore durante la cancellazione", response);
             }
 
-            closeMenu('file', fileId);
         }
 
         async function openFolder(folderId){
@@ -377,7 +379,7 @@
                         <span>></span>
                     <% }); %>
                 </div>
-                <% if(locals.sharedInfo.permission && locals.sharedInfo.permission === "OWNER") { %>
+                <% if(locals.sharedInfo.permission && locals.sharedInfo.permission === "OWNER" && locals.folder.parent_folder_id !== null) { %>
                     <img id="share-icon" src="/assets/images/share-icon.svg" alt="share icon" onclick="shareFolder('<%= folder.id %>', '<%= JSON.stringify(sharedWith) %>')">
                 <% } %>
                 <% if( locals.sharedInfo.permission && locals.sharedInfo.permission !== "OWNER") { %>

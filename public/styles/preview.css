@@ -5,7 +5,7 @@ main {
   justify-content: start;
   width: 100%;
   min-height: 90vh;
-  gap:  50px;
+  gap: 40px;
 }
 
 #back,

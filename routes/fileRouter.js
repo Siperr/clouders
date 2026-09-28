@@ -49,7 +49,7 @@ fileRouter.delete(
   verifyAuth,
   checkPermission,
   async (req, res) => {
-    if (req.permission !== Permission.OWNER) {
+    if (req.Permission && req.permission !== Permission.OWNER) {
       return res.status(403).render("error", {
         message: "You do not have permission to delete this file",
         back: `/folder/${req.query.parent_id}`,
@@ -62,7 +62,6 @@ fileRouter.delete(
       const file = await prisma.files.findFirst({
         where: {
           id: fileId,
-          owner_id: req.user.id,
         },
       });
 
@@ -84,7 +83,6 @@ fileRouter.delete(
       res.redirect(200, `/folder/${file.folder_id}`);
     } catch (err) {
       console.log("delete file error:", err);
-
       res.status(500).json({
         message: "Could not delete file",
       });
