@@ -5,15 +5,21 @@ const fs = require("fs");
 const { validateRenameFile } = require("../middlewares/formValidation");
 const { validationResult } = require("express-validator");
 const path = require("path");
+const {
+  deleteFileFromSupabase,
+  downloadFileFromSupabase,
+  getSignedUrlFromSupabase,
+  getSignedUrlDownloadFromSupabase,
+} = require("../middlewares/fileManager");
 
 fileRouter.get("/:id", verifyAuth, checkPermission, async (req, res) => {
-  if(!req.permission) {
+  if (!req.permission) {
     return res.status(403).render("error", {
       message: "You do not have permission to view this file",
       back: `/folder/${req.query.parent_id}`,
     });
   }
-  
+
   try {
     const file = await prisma.files.findUnique({
       where: {
@@ -21,22 +27,14 @@ fileRouter.get("/:id", verifyAuth, checkPermission, async (req, res) => {
       },
     });
 
-    res.sendFile(
-      path.join(__dirname, "../tmp/uploads", file.path),
-      {
-        headers: {
-          "Content-Disposition": "inline",
-          "Content-Type": file.mime_type,
-        },
-      },
-      (err) => {
-        if (err) {
-          console.error("Error sending file:", err);
-        } else {
-          console.log("Sent:", file.name);
-        }
-      },
-    );
+    const signedUrl = await getSignedUrlFromSupabase(file.path);
+    const signedUrlDownload = await getSignedUrlDownloadFromSupabase(file.path);
+
+    res.render("preview", {
+      file,
+      signedUrl,
+      signedUrlDownload,
+    });
   } catch (err) {
     console.log("error viewing file ", err);
     res.status(500).render("error", {
@@ -51,7 +49,7 @@ fileRouter.delete(
   verifyAuth,
   checkPermission,
   async (req, res) => {
-    if(req.permission !== Permission.OWNER) {
+    if (req.permission !== Permission.OWNER) {
       return res.status(403).render("error", {
         message: "You do not have permission to delete this file",
         back: `/folder/${req.query.parent_id}`,
@@ -74,20 +72,14 @@ fileRouter.delete(
           back: `/folder`,
         });
       }
-      
-      fs.unlink(path.join(__dirname, "../tmp/uploads", file.path), (err) => {
-        if (err) {
-          console.error("Error deleting file from filesystem:", err);
-          throw new Error("Error deleting file from filesystem:" + err);
-        }
-      });
+
+      await deleteFileFromSupabase(file.path);
 
       const deletedFile = await prisma.files.delete({
         where: {
           id: file.id,
         },
       });
-      
 
       res.redirect(200, `/folder/${file.folder_id}`);
     } catch (err) {
@@ -105,7 +97,7 @@ fileRouter.get(
   verifyAuth,
   checkPermission,
   async (req, res) => {
-    if(!req.permission) {
+    if (!req.permission) {
       return res.status(403).render("error", {
         message: "You do not have permission to download this file",
         back: `/folder/${req.query.parent_id}`,
@@ -125,12 +117,23 @@ fileRouter.get(
         return res.status(404).send("File not found");
       }
 
-      res.download(path.join(__dirname, "../tmp/uploads", file.path), file.name);
+      const fileData = await downloadFileFromSupabase(file.path);
+
+      const buffer = Buffer.from(await fileData.arrayBuffer());
+
+      console.log("file/id/download fileData: ", fileData);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${file.name}"`,
+      );
+      res.setHeader("Content-Type", file.mime_type);
+      res.send(buffer);
     } catch (err) {
       console.log("download file error:", err);
 
       res.status(500).render("error", {
         message: "Could not download file",
+        back: `/folder/${req.query.parent_id}`,
       });
     }
   },

@@ -15,25 +15,9 @@ const {
   createFolderTree,
   showAllSharedFolders,
 } = require("../lib/folderUtils");
+const { upload } = require("../config/multer");
+const { uploadFileToSupabase, deleteFileFromSupabase } = require("../middlewares/fileManager");
 
-const crypto = require("crypto");
-const multer = require("multer");
-
-const uploadDir = require("path").join(__dirname, "../tmp/uploads");
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    crypto.randomBytes(16, function (err, raw) {
-      if (err) return cb(err);
-      cb(null, file.originalname + "-" + raw.toString("hex"));
-    });
-  },
-});
-
-const upload = multer({ storage: storage });
 
 folderRouter.get("/all", verifyAuth, async (req, res) => {
   const exclude = req.query.exclude
@@ -200,7 +184,7 @@ folderRouter.get(
 
     try {
       const folderId = Number(req.params.id);
-      const folder = await getFolder(req.user.id, folderId);
+      const folder = await getFolder(req.user.id, folderId, req.permission !== null);
 
       if (!folder) {
         return res.status(404).render("error", {
@@ -225,7 +209,7 @@ folderRouter.post(
   verifyAuth,
   checkPermission,
   (req, res, next) => {
-    if (req.permission && req.permission === Permission.READ) {
+    if (req.permission && req.permission === Permission.READ || req.permission === null) {
       return res.status(403).render("error", {
         message: "You are not allowed to upload to this shared folder",
         back: `/folder/${req.params.id}`,
@@ -234,6 +218,7 @@ folderRouter.post(
     next();
   },
   upload.single("file"),
+  uploadFileToSupabase,
   async (req, res) => {
     try {
       const folderId = Number(req.params.id);
@@ -241,7 +226,6 @@ folderRouter.post(
       const folder = await prisma.folders.findFirst({
         where: {
           id: folderId,
-          owner_id: req.user.id,
         },
       });
 
@@ -254,14 +238,14 @@ folderRouter.post(
           name: req.file.originalname,
           size: req.file.size,
           mime_type: req.file.mimetype,
-          path: req.file.filename,
+          path: req.file.supabasePath,
           owner_id: req.user.id,
           folder_id: folderId,
         },
       });
 
       if(!newFile) {
-        fs.unlinkSync(require("path").join(__dirname, "../tmp/uploads", req.file.path));
+        deleteFileFromSupabase(req.file.supabasePath);
         throw new Error("Could not create file entry");
       }
 
@@ -322,7 +306,13 @@ folderRouter.post(
   },
 );
 
-folderRouter.post("/:id/move", verifyAuth, async (req, res) => {
+folderRouter.post("/:id/move", verifyAuth, checkPermission, async (req, res) => {
+  if(req.permission && req.permission !== Permission.OWNER) {
+    return res.status(403).render("error", {
+      message: "You do not have permission to move this folder",
+      back: `/folder/${req.query.parent_id}`,
+    });
+  }
   try {
     const folderId = Number(req.params.id);
     const newParentId = Number(req.body["new-parent-folder"]);

@@ -59,6 +59,10 @@
             window.location.href = `/file/${Number(fileId)}/`;
         }
 
+        async function downloadFile(fileId, folderId){
+            window.location.href = `/file/${Number(fileId)}/download?parent_id=${Number(folderId)}`;
+        }
+
         function showMenu(type, idString) {
             const id = Number(idString);
             const menu = document.querySelector(
